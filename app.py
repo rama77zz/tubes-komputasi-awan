@@ -16,15 +16,33 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 database_uri = os.getenv('DATABASE_URL') 
 
+AZURE_DB_HOST = 'praktikum-crudtaufiq2311.mysql.database.azure.com'
+AZURE_DB_USER = 'adminlogintest'
+AZURE_DB_PASS = 'mpVYe8mXt8h2wdi'
+AZURE_DB_NAME = 'invoiceinaja'
+
+if not database_uri:
+    database_uri = f"mysql+pymysql://{AZURE_DB_USER}:{AZURE_DB_PASS}@{AZURE_DB_HOST}/{AZURE_DB_NAME}"
+
+ssl_cert_path = os.path.join(basedir, "DigiCertGlobalRootCA.crt.pem")
+
 if database_uri:
-    if database_uri.startswith("postgres://"):
-        database_uri = database_uri.replace("postgres://", "postgresql://", 1)
-    
     app.config['SQLALCHEMY_DATABASE_URI'] = database_uri
-    print(f">>> MENGGUNAKAN DATABASE EKSTERNAL (CLOUD/DOCKER).")
+    
+    if os.path.exists(ssl_cert_path):
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            "connect_args": {
+                "ssl": {"ca": ssl_cert_path}
+            }
+        }
+        print(">>> SSL CERTIFICATE DITEMUKAN.")
+    else:
+        print(">>> WARNING: SSL CERTIFICATE TIDAK DITEMUKAN.")
+        
+    print(f">>> MENGGUNAKAN DATABASE: {AZURE_DB_HOST}")
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'invoice.db')
-    print(">>> MENGGUNAKAN DATABASE LOKAL (SQLite).")
+    print(">>> MENGGUNAKAN DATABASE LOKAL.")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -58,10 +76,15 @@ def init_db():
             db.create_all()
             print(">>> SUKSES: Tabel Database Siap.")
             
-            if not User.query.filter_by(username='user_demo').first():
-                db.session.add(User(username='user_demo', password='123', is_premium=False))
-                db.session.commit()
-                print(">>> User Demo 'user_demo' berhasil dibuat.")
+            try:
+                if not User.query.filter_by(username='user_demo').first():
+                    db.session.add(User(username='user_demo', password='123', is_premium=False))
+                    db.session.commit()
+                    print(">>> User Demo 'user_demo' berhasil dibuat.")
+            except Exception:
+                db.session.rollback()
+                pass
+                
         except Exception as e:
             print(f">>> ERROR DATABASE: {e}")
 
