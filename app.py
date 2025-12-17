@@ -30,6 +30,7 @@ ssl_cert_path = os.path.join(basedir, "DigiCertGlobalRootCA.crt.pem")
 if database_uri:
     app.config['SQLALCHEMY_DATABASE_URI'] = database_uri
 
+    # JIKA MAU PAKAI SSL, PASTIKAN FILE CA BENAR-BENAR ADA
     if os.path.exists(ssl_cert_path):
         app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
             "connect_args": {
@@ -89,20 +90,67 @@ def init_db():
         except Exception as e:
             print(f">>> ERROR DATABASE: {e}")
 
-# PANGGIL init_db DI SINI AGAR JALAN DI AZURE
+# DIPANGGIL DI SINI AGAR JALAN DI AZURE (gunicorn app:app)
 init_db()
 
 @app.route('/')
 def index():
     return redirect(url_for('dashboard'))
 
-# ... (semua route lain tetap sama persis) ...
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
 
-@app.route('/generate_invoice', methods=['POST'])
-def generate_invoice():
-    # isi sama seperti punya kamu
-    ...
+        user = User.query.filter_by(username=username, password=password).first()
+        if user:
+            session['user_id'] = user.id
+            flash('Login Berhasil!', 'success')
+            return redirect(url_for('dashboard'))
+        else:
+            flash('Username atau Password salah.', 'error')
+    return render_template('login.html')
 
-if __name__ == '__main__':
-    # DI LOKAL SAJA
-    app.run(debug=True, host='0.0.0.0', port=5000)
+@app.route('/register', methods=['POST'])
+def register():
+    username = request.form['username']
+    password = request.form['password']
+
+    if User.query.filter_by(username=username).first():
+        flash('Username sudah dipakai.', 'error')
+        return redirect(url_for('login'))
+
+    new_user = User(username=username, password=password, is_premium=False)
+    db.session.add(new_user)
+    db.session.commit()
+
+    flash('Pendaftaran Berhasil! Silakan Login.', 'success')
+    return redirect(url_for('login'))
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('dashboard'))
+
+@app.route('/dashboard')
+def dashboard():
+    user = None
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+        if user and user.is_premium and user.premium_expiry:
+            if datetime.now() > user.premium_expiry:
+                user.is_premium = False
+                user.premium_expiry = None
+                db.session.commit()
+                flash('Langganan Premium Berakhir.', 'warning')
+
+    if not user:
+        class Guest:
+            id = None
+            username = "Tamu (Guest)"
+            is_premium = False
+            company_logo = None
+            company_address = None
+            signature_file = None
+        user = Guest
