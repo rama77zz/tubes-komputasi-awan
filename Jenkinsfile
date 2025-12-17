@@ -1,6 +1,6 @@
 /**
  * Pipeline CI/CD untuk Aplikasi Flask ke Azure Web App (invoiceinaja)
- * Alur: Checkout -> Build Docker Image -> Login & Push ke ACR -> Deploy ke Azure Web App
+ * DIKOREKSI TOTAL SINTAKS JENKINSFILE
  */
 pipeline {
     agent any
@@ -53,24 +53,20 @@ pipeline {
             }
         }
 
-        // START PERBAIKAN DI SINI!
         stage('Deploy to Azure Web App') {
             steps {
                 echo "Deploy image ${env.DOCKER_TAG} ke Azure Web App ${env.AZURE_APP_NAME}..."
 
                 withCredentials([azureServicePrincipal(credentialsId: env.AZURE_CREDENTIALS_ID)]) {
-                azureWebAppPublish azureCredentialsId: env.AZURE_CREDENTIALS_ID,
-                     resourceGroup:    env.AZURE_RESOURCE_GROUP,
-                     appName:          env.AZURE_APP_NAME,
-                     dockerImageName:    "${env.ACR_REGISTRY}/${env.DOCKER_IMAGE_NAME}",
-                     dockerImageTag:     env.DOCKER_TAG,
-                     // Perubahan nama parameter 1
-                     dockerRegistryEndpoint: env.ACR_REGISTRY,           // FIX: Ganti Url -> Endpoint
-                     // Perubahan nama parameter 2
-                     dockerCredentialsId: env.DOCKER_CREDENTIALS_ID
+                    azureWebAppPublish azureCredentialsId: env.AZURE_CREDENTIALS_ID,
+                                         resourceGroup:    env.AZURE_RESOURCE_GROUP,
+                                         appName:          env.AZURE_APP_NAME,
+                                         dockerImageName:    "${env.ACR_REGISTRY}/${env.DOCKER_IMAGE_NAME}",
+                                         dockerImageTag:     env.DOCKER_TAG,
+                                         dockerRegistryEndpoint: env.ACR_REGISTRY
+                                         // BARIS dockerCredentialsId SUDAH DIHAPUS (FIX TERAKHIR)
                 }
             }
         }
-        // AKHIR PERBAIKAN
     }
 }
