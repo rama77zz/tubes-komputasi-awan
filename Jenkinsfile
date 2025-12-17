@@ -59,14 +59,15 @@ pipeline {
                 echo "Deploy image ${env.DOCKER_TAG} ke Azure Web App ${env.AZURE_APP_NAME}..."
 
                 withCredentials([azureServicePrincipal(credentialsId: env.AZURE_CREDENTIALS_ID)]) {
-                    azureWebAppPublish azureCredentialsId: env.AZURE_CREDENTIALS_ID,
-                                         resourceGroup:    env.AZURE_RESOURCE_GROUP,
-                                         appName:          env.AZURE_APP_NAME,
-                                         // PARAMETER YANG DIKOREKSI (ditambah 'docker' prefix)
-                                         dockerImageName:    "${env.ACR_REGISTRY}/${env.DOCKER_IMAGE_NAME}", // FIX
-                                         dockerImageTag:     env.DOCKER_TAG,                                 // FIX
-                                         dockerRegistryUrl:  env.ACR_REGISTRY,                               // FIX
-                                         dockerCredentialsId: env.DOCKER_CREDENTIALS_ID                     // FIX
+                azureWebAppPublish azureCredentialsId: env.AZURE_CREDENTIALS_ID,
+                     resourceGroup:    env.AZURE_RESOURCE_GROUP,
+                     appName:          env.AZURE_APP_NAME,
+                     dockerImageName:    "${env.ACR_REGISTRY}/${env.DOCKER_IMAGE_NAME}",
+                     dockerImageTag:     env.DOCKER_TAG,
+                     // Perubahan nama parameter 1
+                     dockerRegistryEndpoint: env.ACR_REGISTRY,           // FIX: Ganti Url -> Endpoint
+                     // Perubahan nama parameter 2
+                     dockerCredentialsId: env.DOCKER_CREDENTIALS_ID
                 }
             }
         }
