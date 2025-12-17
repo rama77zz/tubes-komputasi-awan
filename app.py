@@ -5,34 +5,36 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.utils import secure_filename
 import midtransclient
+import pymysql
+
+pymysql.install_as_MySQLdb()
 
 app = Flask(__name__)
 app.secret_key = 'rahasia_lokal_123'
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-# Ambil URL koneksi dari Environment Variables (Azure/Docker)
 database_uri = os.getenv('DATABASE_URL') 
 
 if database_uri:
-    # Mode Produksi/Docker: Gunakan MySQL
+    if database_uri.startswith("postgres://"):
+        database_uri = database_uri.replace("postgres://", "postgresql://", 1)
+    
     app.config['SQLALCHEMY_DATABASE_URI'] = database_uri
-    print(f">>> MENGGUNAKAN DATABASE EKSTERNAL.")
+    print(f">>> MENGGUNAKAN DATABASE EKSTERNAL (CLOUD/DOCKER).")
 else:
-    # Mode Lokal: Gunakan SQLite
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'invoice.db')
     print(">>> MENGGUNAKAN DATABASE LOKAL (SQLite).")
-    
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-# ... (lanjutan di bawahnya)
 
 app.config['UPLOAD_FOLDER'] = os.path.join(basedir, 'static/uploads')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 db = SQLAlchemy(app)
 
-MIDTRANS_SERVER_KEY = 'Mid-server-JEHBUtBFFwcJ8Sw8GypuXrQZ' 
-MIDTRANS_CLIENT_KEY = 'Mid-client-wXRT3UdSUW4t95P6'
+MIDTRANS_SERVER_KEY = 'SB-Mid-server-JEHBUtBFFwcJ8Sw8GypuXrQZ' 
+MIDTRANS_CLIENT_KEY = 'SB-Mid-client-wXRT3UdSUW4t95P6'
 
 snap = midtransclient.Snap(
     is_production=False,
@@ -47,21 +49,21 @@ class User(db.Model):
     is_premium = db.Column(db.Boolean, default=False)
     premium_expiry = db.Column(db.DateTime, nullable=True)
     company_logo = db.Column(db.String(200), nullable=True)
-    company_address = db.Column(db.String(500), nullable=True) # Alamat Perusahaan
-    signature_file = db.Column(db.String(200), nullable=True) # File Tanda Tangan
+    company_address = db.Column(db.String(500), nullable=True) 
+    signature_file = db.Column(db.String(200), nullable=True) 
 
 def init_db():
     with app.app_context():
         try:
             db.create_all()
-            print(">>> SUKSES: Database Lokal SQLite Siap.")
+            print(">>> SUKSES: Tabel Database Siap.")
+            
             if not User.query.filter_by(username='user_demo').first():
                 db.session.add(User(username='user_demo', password='123', is_premium=False))
                 db.session.commit()
                 print(">>> User Demo 'user_demo' berhasil dibuat.")
         except Exception as e:
             print(f">>> ERROR DATABASE: {e}")
-
 
 @app.route('/')
 def index():
@@ -72,6 +74,7 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        
         user = User.query.filter_by(username=username, password=password).first()
         if user:
             session['user_id'] = user.id
@@ -80,6 +83,22 @@ def login():
         else:
             flash('Username atau Password salah.', 'error')
     return render_template('login.html')
+
+@app.route('/register', methods=['POST'])
+def register():
+    username = request.form['username']
+    password = request.form['password']
+    
+    if User.query.filter_by(username=username).first():
+        flash('Username sudah dipakai.', 'error')
+        return redirect(url_for('login'))
+    
+    new_user = User(username=username, password=password, is_premium=False)
+    db.session.add(new_user)
+    db.session.commit()
+    
+    flash('Pendaftaran Berhasil! Silakan Login.', 'success')
+    return redirect(url_for('login'))
 
 @app.route('/logout')
 def logout():
@@ -224,5 +243,4 @@ def generate_invoice():
 
 if __name__ == '__main__':
     init_db()
-    print("Menjalankan Server (Mode Lokal SQLite)...")
-    app.run(debug=True, port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)
