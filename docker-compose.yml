@@ -2,18 +2,17 @@ version: '3.8'
 
 services:
   web:
-    build: . # Build dari Dockerfile di folder saat ini
+    build: .   # tetap build dari Dockerfile saat docker-compose up
+    image: tugasbesarccacr.azurecr.io/invoiceinaja:${TAG:-local}
     container_name: flask_invoice_app
     restart: always
     ports:
       - "5000:5000"
     environment:
-      # Koneksi database untuk Flask (Pastikan app.py membaca ENV ini)
       - DATABASE_URL=mysql+pymysql://user_lokal:password_rahasia@db/invoice_db
       - SECRET_KEY=kunci_rahasia_untuk_session
       - FLASK_ENV=production
     volumes:
-      # Persistensi file upload
       - ./static/uploads:/app/static/uploads
     depends_on:
       - db
@@ -30,12 +29,10 @@ services:
       MYSQL_PASSWORD: password_rahasia
       MYSQL_ROOT_PASSWORD: root_password_super_secure
     volumes:
-      # Simpan data MySQL agar tidak hilang
       - db_data:/var/lib/mysql
     networks:
       - app_network
     healthcheck:
-      # Memastikan database benar-benar siap sebelum Web Flask konek
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
       timeout: 20s
       retries: 10
