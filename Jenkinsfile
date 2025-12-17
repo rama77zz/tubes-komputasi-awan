@@ -1,6 +1,6 @@
 /**
  * Pipeline CI/CD untuk Aplikasi Flask ke Azure Web App (invoiceinaja)
- * DIKOREKSI TOTAL SINTAKS JENKINSFILE
+ * MENGGUNAKAN SINTAKS BAT (WINDOWS)
  */
 pipeline {
     agent any
@@ -31,8 +31,9 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo "Building Docker Image: ${env.ACR_REGISTRY}/${env.DOCKER_IMAGE_NAME}:${env.DOCKER_TAG}"
-                sh """
-                    docker build \
+                // MENGGANTI sh MENJADI bat (Menggunakan ^ untuk line continuation)
+                bat """
+                    docker build ^
                      -t ${env.ACR_REGISTRY}/${env.DOCKER_IMAGE_NAME}:${env.DOCKER_TAG} .
                 """
             }
@@ -44,8 +45,9 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: env.DOCKER_CREDENTIALS_ID,
                                                  usernameVariable: 'DOCKER_USERNAME',
                                                  passwordVariable: 'DOCKER_PASSWORD')]) {
-                    sh """
-                        echo "${DOCKER_PASSWORD}" | docker login ${env.ACR_REGISTRY} \
+                    // MENGGANTI sh MENJADI bat
+                    bat """
+                        ECHO ${DOCKER_PASSWORD} | docker login ${env.ACR_REGISTRY} ^
                           -u "${DOCKER_USERNAME}" --password-stdin
                         docker push ${env.ACR_REGISTRY}/${env.DOCKER_IMAGE_NAME}:${env.DOCKER_TAG}
                     """
@@ -58,13 +60,13 @@ pipeline {
                 echo "Deploy image ${env.DOCKER_TAG} ke Azure Web App ${env.AZURE_APP_NAME}..."
 
                 withCredentials([azureServicePrincipal(credentialsId: env.AZURE_CREDENTIALS_ID)]) {
+                    // Command ini adalah Groovy/Jenkins DSL, jadi tidak perlu diubah ke bat
                     azureWebAppPublish azureCredentialsId: env.AZURE_CREDENTIALS_ID,
                                          resourceGroup:    env.AZURE_RESOURCE_GROUP,
                                          appName:          env.AZURE_APP_NAME,
                                          dockerImageName:    "${env.ACR_REGISTRY}/${env.DOCKER_IMAGE_NAME}",
                                          dockerImageTag:     env.DOCKER_TAG,
                                          dockerRegistryEndpoint: env.ACR_REGISTRY
-                                         // BARIS dockerCredentialsId SUDAH DIHAPUS (FIX TERAKHIR)
                 }
             }
         }
