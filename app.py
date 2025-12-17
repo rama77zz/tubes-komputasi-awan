@@ -10,8 +10,21 @@ app = Flask(__name__)
 app.secret_key = 'rahasia_lokal_123'
 
 basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'invoice.db')
+
+# Ambil URL koneksi dari Environment Variables (Azure/Docker)
+database_uri = os.getenv('DATABASE_URL') 
+
+if database_uri:
+    # Mode Produksi/Docker: Gunakan MySQL
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_uri
+    print(f">>> MENGGUNAKAN DATABASE EKSTERNAL.")
+else:
+    # Mode Lokal: Gunakan SQLite
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'invoice.db')
+    print(">>> MENGGUNAKAN DATABASE LOKAL (SQLite).")
+    
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# ... (lanjutan di bawahnya)
 
 app.config['UPLOAD_FOLDER'] = os.path.join(basedir, 'static/uploads')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)

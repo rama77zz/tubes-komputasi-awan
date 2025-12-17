@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  web:
+    build: . # Build dari Dockerfile di folder saat ini
+    container_name: flask_invoice_app
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      # Koneksi database untuk Flask (Pastikan app.py membaca ENV ini)
+      - DATABASE_URL=mysql+pymysql://user_lokal:password_rahasia@db/invoice_db
+      - SECRET_KEY=kunci_rahasia_untuk_session
+      - FLASK_ENV=production
+    volumes:
+      # Persistensi file upload
+      - ./static/uploads:/app/static/uploads
+    depends_on:
+      - db
+    networks:
+      - app_network
+
+  db:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: invoice_db
+      MYSQL_USER: user_lokal
+      MYSQL_PASSWORD: password_rahasia
+      MYSQL_ROOT_PASSWORD: root_password_super_secure
+    volumes:
+      # Simpan data MySQL agar tidak hilang
+      - db_data:/var/lib/mysql
+    networks:
+      - app_network
+    healthcheck:
+      # Memastikan database benar-benar siap sebelum Web Flask konek
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+volumes:
+  db_data:
+
+networks:
+  app_network:
+    driver: bridge
