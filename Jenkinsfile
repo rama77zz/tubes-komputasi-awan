@@ -6,15 +6,12 @@ pipeline {
     agent any
 
     environment {
-        // --- KONFIGURASI ACR (SUDAH DISISIAPKAN) ---
-        ACR_REGISTRY      = "tugasbesarccacr.azurecr.io"   // loginServer dari ACR
-        DOCKER_IMAGE_NAME = "invoiceinaja"                 // nama repo image di ACR
-        DOCKER_TAG        = "${env.BUILD_NUMBER}"          // tag unik per build
+        // --- KONFIGURASI ACR ---
+        ACR_REGISTRY      = "tugasbesarccacr.azurecr.io"
+        DOCKER_IMAGE_NAME = "invoiceinaja"
+        DOCKER_TAG        = "${env.BUILD_NUMBER}"
 
         // --- ID Kredensial di Jenkins ---
-        // Harus kamu buat di Jenkins:
-        // - 'azure-service-principal' : Service Principal untuk Azure
-        // - 'acr-docker-credentials' : username/password ACR (admin user ACR atau SP)
         AZURE_CREDENTIALS_ID  = "azure-service-principal"
         DOCKER_CREDENTIALS_ID = "acr-docker-credentials"
 
@@ -36,7 +33,7 @@ pipeline {
                 echo "Building Docker Image: ${env.ACR_REGISTRY}/${env.DOCKER_IMAGE_NAME}:${env.DOCKER_TAG}"
                 sh """
                     docker build \
-                      -t ${env.ACR_REGISTRY}/${env.DOCKER_IMAGE_NAME}:${env.DOCKER_TAG} .
+                     -t ${env.ACR_REGISTRY}/${env.DOCKER_IMAGE_NAME}:${env.DOCKER_TAG} .
                 """
             }
         }
@@ -56,20 +53,23 @@ pipeline {
             }
         }
 
+        // START PERBAIKAN DI SINI!
         stage('Deploy to Azure Web App') {
             steps {
                 echo "Deploy image ${env.DOCKER_TAG} ke Azure Web App ${env.AZURE_APP_NAME}..."
 
                 withCredentials([azureServicePrincipal(credentialsId: env.AZURE_CREDENTIALS_ID)]) {
                     azureWebAppPublish azureCredentialsId: env.AZURE_CREDENTIALS_ID,
-                                       resourceGroup:      env.AZURE_RESOURCE_GROUP,
-                                       appName:            env.AZURE_APP_NAME,
-                                       imageName:          "${env.ACR_REGISTRY}/${env.DOCKER_IMAGE_NAME}",
-                                       imageTag:           env.DOCKER_TAG,
-                                       registryUrl:        env.ACR_REGISTRY,
-                                       credentialsId:      env.DOCKER_CREDENTIALS_ID
+                                         resourceGroup:    env.AZURE_RESOURCE_GROUP,
+                                         appName:          env.AZURE_APP_NAME,
+                                         // PARAMETER YANG DIKOREKSI (ditambah 'docker' prefix)
+                                         dockerImageName:    "${env.ACR_REGISTRY}/${env.DOCKER_IMAGE_NAME}", // FIX
+                                         dockerImageTag:     env.DOCKER_TAG,                                 // FIX
+                                         dockerRegistryUrl:  env.ACR_REGISTRY,                               // FIX
+                                         dockerCredentialsId: env.DOCKER_CREDENTIALS_ID                     // FIX
                 }
             }
         }
+        // AKHIR PERBAIKAN
     }
 }
