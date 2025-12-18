@@ -42,7 +42,6 @@
         .modern td:first-child { border-left: 1px solid #f0f0f0; border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
         .modern td:last-child { border-right: 1px solid #f0f0f0; border-top-right-radius: 8px; border-bottom-right-radius: 8px; text-align: right; }
         .modern .total-box { background: #111; color: white; padding: 20px 30px; border-radius: 12px; float: right; margin-top: 30px; }
-        
         .modern .footer { margin-top: 60px; border-top: 1px solid #eee; padding-top: 20px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 0.8rem; color: #666; }
         .modern .signature-box { text-align: center; width: 150px; }
         .modern .sig-img { height: 60px; margin-bottom: 10px; object-fit: contain; }
@@ -97,7 +96,11 @@
         {% if template == 'modern' %}
             <div class="header">
                 <div>
-                    {% if user.company_logo %}<img src="{{ url_for('static', filename='uploads/' + user.company_logo) }}" class="logo-img">{% else %}<h2 class="text-2xl font-black uppercase">{{ user.username }}</h2>{% endif %}
+                    {% if user.company_logo %}
+                        <img src="{{ url_for('static', filename='uploads/' + user.company_logo) }}" class="logo-img">
+                    {% else %}
+                        <h2 class="text-2xl font-black uppercase">{{ user.username }}</h2>
+                    {% endif %}
                 </div>
                 <div style="text-align: right;">
                     <h1>{{ header_title }}</h1>
@@ -109,9 +112,9 @@
             <div class="header-bar" style="background-color: {{ line_color }};"></div>
             <div class="header">
                 <div>
-                     {% if user.company_logo %}
+                    {% if user.company_logo %}
                         <img src="{{ url_for('static', filename='uploads/' + user.company_logo) }}" class="logo-img">
-                     {% endif %}
+                    {% endif %}
                     <h2 class="company-name" style="color: {{ line_color }};">{{ user.username }} CORP.</h2>
                 </div>
                 <div>
@@ -183,7 +186,6 @@
             <div class="footer">
 
                 {% if template == 'corporate' %}
-
                     <div class="address-box">
                         {% if user.company_address %}
                             <p class="address-title">Alamat Perusahaan:</p>
@@ -211,7 +213,9 @@
                         {% endif %}
                     </div>
                     <div class="signature-box">
-                        {% if user.signature_file %}<img src="{{ url_for('static', filename='uploads/' + user.signature_file) }}" class="sig-img">{% endif %}
+                        {% if user.signature_file %}
+                            <img src="{{ url_for('static', filename='uploads/' + user.signature_file) }}" class="sig-img">
+                        {% endif %}
                         <p style="font-weight: bold;">{{ user.username }}</p>
                         <div class="sig-line"></div>
                         <p style="font-size: 0.7rem;">Authorized Signature</p>
@@ -224,8 +228,7 @@
         </div>
     </div>
 
- <div class="fixed bottom-10 right-10 no-print flex gap-4">
-
+    <div class="fixed bottom-10 right-10 no-print flex gap-4">
         <button onclick="window.close()" 
                 class="group flex items-center gap-2 bg-gray-600 text-white px-4 py-3 rounded-full shadow-lg hover:bg-gray-700 transition-all duration-300 hover:pr-6"
                 title="Tutup Preview">
@@ -234,7 +237,7 @@
         </button>
 
         <button onclick="window.print()" 
-                class="group flex items-center gap-2 bg-indigo-600 text-white px-4 py-3 rounded-full shadow-lg hover:bg-indigo-700 transition-all duration-300 hover:pr-6 animate-bounce hover:animate-none"
+                class="group flex items-center gap-2 bg-indigo-600 text-white px-4 py-3 rounded-full shadow-lg hover:bg-indigo-700 transition-all duration-300 hover:pr-6"
                 title="Cetak Sekarang">
             <i class="fas fa-print text-lg"></i>
             <span class="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap text-sm font-bold">Cetak</span>
