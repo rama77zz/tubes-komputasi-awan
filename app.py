@@ -257,36 +257,51 @@ def update_address():
     return jsonify({"success": True})
 
 
-# Terima dua URL agar tidak 404 karena beda penamaan endpoint
-@app.route("/getpaymenttoken", methods=["POST"])
+# Terima dua URL agar tidak 404 karena beda penamaan endpoint@app.route("/getpaymenttoken", methods=["POST"])
 @app.route("/get_payment_token", methods=["POST"])
 def get_payment_token():
-    # Samakan kunci session: di project banyak yang pakai 'user_id' / 'userid'
-    uid = session.get("user_id") or session.get("userid")
-    if not uid:
-        return jsonify({"error": "login_required"}), 401
-
-    user = User.query.get(uid)
-    if not user:
-        return jsonify({"error": "user_not_found"}), 401
-
-    order_id = f"SUB-{user.id}-{int(time.time())}"
-    param = {
-        "transaction_details": {
-            "order_id": order_id,
-            "gross_amount": 50000,
-        },
-        "customer_details": {
-            "first_name": user.username,
-            "email": "user@lokal.com",
-        },
-    }
-
     try:
+        print(">>> get_payment_token dipanggil")
+
+        # Samakan kunci session
+        uid = session.get("user_id") or session.get("userid")
+        print(">>> uid dari session =", uid)
+
+        if not uid:
+            print(">>> ERROR: user belum login")
+            return jsonify({"error": "login_required"}), 401
+
+        user = User.query.get(uid)
+        print(">>> user =", user.username if user else None)
+
+        if not user:
+            print(">>> ERROR: user tidak ditemukan di DB")
+            return jsonify({"error": "user_not_found"}), 401
+
+        order_id = f"SUB-{user.id}-{int(time.time())}"
+        print(">>> order_id =", order_id)
+
+        param = {
+            "transaction_details": {
+                "order_id": order_id,
+                "gross_amount": 50000,
+            },
+            "customer_details": {
+                "first_name": user.username,
+                "email": "user@lokal.com",
+            },
+        }
+        print(">>> param ke Midtrans =", param)
+
         transaction = snap.create_transaction(param)
+        print(">>> transaction response =", transaction)
+
         return jsonify({"token": transaction["token"]})
     except Exception as e:
-        print(f"Midtrans Error: {e}")
+        # log traceback lengkap ke log stream
+        import traceback
+        print(">>> ERROR di get_payment_token:", e)
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 
