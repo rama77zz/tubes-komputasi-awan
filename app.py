@@ -25,7 +25,7 @@ AZURE_DB_NAME = 'invoiceinaja'
 if not database_uri:
     database_uri = f"mysql+pymysql://{AZURE_DB_USER}:{AZURE_DB_PASS}@{AZURE_DB_HOST}/{AZURE_DB_NAME}"
 
-ssl_cert_path = os.path.join(basedir, "DigiCertGlobalRootCA.crt.pem")
+ssl_cert_path = os.path.join(basedir, "ssl", "combined-ca-certificates.pem")
 
 if database_uri:
     app.config['SQLALCHEMY_DATABASE_URI'] = database_uri
