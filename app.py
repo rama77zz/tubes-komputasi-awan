@@ -31,32 +31,13 @@ AZURE_DB_USER = "adminlogintest"
 AZURE_DB_PASS = "mpVYe8mXt8h2wdi"
 AZURE_DB_NAME = "invoiceinaja"
 
-if not database_uri:
-    # Coba gunakan konfigurasi Azure manual (pymysql)
-    database_uri = (
-        f"mysql+pymysql://{AZURE_DB_USER}:{AZURE_DB_PASS}"
-        f"@{AZURE_DB_HOST}/{AZURE_DB_NAME}"
-    )
+database_uri = (
+    f"mysql+pymysql://{AZURE_DB_USER}:{AZURE_DB_PASS}"
+    f"@{AZURE_DB_HOST}/{AZURE_DB_NAME}"
+)
 
-# Konfigurasi Sertifikat SSL (opsional tapi disarankan untuk Azure)
-ssl_cert_path = os.path.join(basedir, "DigiCertGlobalRootCA.crt.pem")
-connect_args = {}
-if os.path.exists(ssl_cert_path):
-    connect_args = {"ssl": {"ca": ssl_cert_path}}
-
-if database_uri:
-    app.config["SQLALCHEMY_DATABASE_URI"] = database_uri
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"connect_args": connect_args}
-    print(f">>> MENGGUNAKAN DATABASE: {AZURE_DB_HOST} (atau Env)")
-else:
-    # Fallback ke lokal (SQLite)
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(
-        basedir, "invoice.db"
-    )
-    print(">>> MENGGUNAKAN DATABASE LOKAL (SQLite).")
-
+app.config["SQLALCHEMY_DATABASE_URI"] = database_uri
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["UPLOAD_FOLDER"] = os.path.join(basedir, "static", "uploads")
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 db = SQLAlchemy(app)
