@@ -43,8 +43,8 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 db = SQLAlchemy(app)
 
-MIDTRANS_SERVER_KEY = 'SB-Mid-server-JEHBUtBFFwcJ8Sw8GypuXrQZ'
-MIDTRANS_CLIENT_KEY = 'SB-Mid-client-wXRT3UdSUW4t95P6'
+MIDTRANS_SERVER_KEY = 'Mid-server-JEHBUtBFFwcJ8Sw8GypuXrQZ'
+MIDTRANS_CLIENT_KEY = 'Mid-client-wXRT3UdSUW4t95P6'
 
 snap = midtransclient.Snap(
     is_production=False,
