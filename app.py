@@ -7,7 +7,6 @@ from flask import (
     url_for, session, jsonify, flash
 )
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.exc import OperationalError
 from werkzeug.utils import secure_filename
 
 import midtransclient
@@ -21,11 +20,8 @@ app.secret_key = "rahasia_lokal_123"
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-# --- KONFIGURASI DATABASE (PRIORITAS ENV -> MANUAL AZURE -> LOKAL) ---
+# --- KONFIGURASI DATABASE (AZURE MYSQL TANPA SSL) ---
 
-database_uri = os.getenv("DATABASE_URL")
-
-# Data Koneksi Azure Manual
 AZURE_DB_HOST = "praktikum-crudtaufiq2311.mysql.database.azure.com"
 AZURE_DB_USER = "adminlogintest"
 AZURE_DB_PASS = "mpVYe8mXt8h2wdi"
@@ -38,16 +34,20 @@ database_uri = (
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_uri
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+# folder upload
+app.config["UPLOAD_FOLDER"] = os.path.join(basedir, "static", "uploads")
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 db = SQLAlchemy(app)
 
-# --- KONFIGURASI MIDTRANS (TANPA SNAP BI) ---
+# --- KONFIGURASI MIDTRANS ---
+
 MIDTRANS_SERVER_KEY = "Mid-server-JEHBUtBFFwcJ8Sw8GypuXrQZ"
 MIDTRANS_CLIENT_KEY = "Mid-client-wXRT3UdSUW4t95P6"
 
 snap = midtransclient.Snap(
-    is_production=False,  # tetap False untuk tugas praktikum
+    is_production=False,
     server_key=MIDTRANS_SERVER_KEY,
     client_key=MIDTRANS_CLIENT_KEY,
 )
@@ -66,14 +66,15 @@ class User(db.Model):
     signature_file = db.Column(db.String(200), nullable=True)
 
 
-# Fungsi Init DB
+# --- INIT DB ---
+
+
 def init_db():
     with app.app_context():
         try:
             db.create_all()
             print(">>> SUKSES: Tabel Database Siap.")
             try:
-                # Cek user demo
                 if not User.query.filter_by(username="user_demo").first():
                     db.session.add(
                         User(
@@ -90,7 +91,7 @@ def init_db():
             print(f">>> ERROR DATABASE: {e}")
 
 
-# --- HELPER GUEST (MODE TAMU) ---
+# --- HELPER GUEST ---
 
 
 class Guest:
@@ -169,7 +170,6 @@ def dashboard():
                     db.session.commit()
                     flash("Langganan Premium Berakhir.", "warning")
         except Exception:
-            # jika koneksi putus tiba-tiba
             pass
 
     if not user:
@@ -238,13 +238,13 @@ def update_address():
     return jsonify({"success": True})
 
 
-# Terima dua URL agar tidak 404 karena beda penamaan endpoint@app.route("/getpaymenttoken", methods=["POST"])
+# Terima dua URL agar tidak 404 karena beda penamaan endpoint
+@app.route("/getpaymenttoken", methods=["POST"])
 @app.route("/get_payment_token", methods=["POST"])
 def get_payment_token():
     try:
         print(">>> get_payment_token dipanggil")
 
-        # Samakan kunci session
         uid = session.get("user_id") or session.get("userid")
         print(">>> uid dari session =", uid)
 
@@ -279,7 +279,6 @@ def get_payment_token():
 
         return jsonify({"token": transaction["token"]})
     except Exception as e:
-        # log traceback lengkap ke log stream
         import traceback
         print(">>> ERROR di get_payment_token:", e)
         traceback.print_exc()
@@ -303,7 +302,6 @@ def payment_success():
 
 @app.route("/generate_invoice", methods=["POST"])
 def generate_invoice():
-    # tentukan user / guest
     if "user_id" in session:
         user = User.query.get(session["user_id"])
     else:
@@ -312,7 +310,6 @@ def generate_invoice():
     data = request.form
     template = data.get("template", "basic")
 
-    # non-premium hanya boleh template basic
     if not getattr(user, "is_premium", False) and template != "basic":
         template = "basic"
 
@@ -321,7 +318,6 @@ def generate_invoice():
     line_color = data.get("line_color", "#000000")
 
     items = []
-    # nama field disesuaikan dengan dashboard.html (itemname, itemqty, itemprice)
     names = request.form.getlist("itemname")
     qtys = request.form.getlist("itemqty")
     prices = request.form.getlist("itemprice")
