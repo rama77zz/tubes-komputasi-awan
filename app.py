@@ -302,44 +302,57 @@ def payment_success():
 
 @app.route("/generate_invoice", methods=["POST"])
 def generate_invoice():
+    # tentukan user / guest
     if "user_id" in session:
         user = User.query.get(session["user_id"])
     else:
         user = Guest()
 
     data = request.form
+
+    # template dipilih dari radio button di dashboard.html (name="template")
     template = data.get("template", "basic")
 
+    # non-premium hanya boleh template basic
     if not getattr(user, "is_premium", False) and template != "basic":
         template = "basic"
 
-    header_title = data.get("header_title", "INVOICE")
-    bg_color = data.get("bg_color", "#ffffff")
-    line_color = data.get("line_color", "#000000")
+    # hidden input yang diisi JS saat submit (lihat id finalHeaderTitle, finalBgColor, finalLineColor)
+    header_title = data.get("headertitle", "INVOICE")
+    bg_color     = data.get("bgcolor", "#ffffff")
+    line_color   = data.get("linecolor", "#000000")
+
+    # field "Kepada Yth" di dashboard.html (name="customername")
+    customer = data.get("customername", "").strip()
 
     items = []
-    names = request.form.getlist("itemname")
-    qtys = request.form.getlist("itemqty")
+    max_items = 10
+
+    # nama field item mengikuti dashboard.html: itemname, itemqty, itemprice
+    names  = request.form.getlist("itemname")
+    qtys   = request.form.getlist("itemqty")
     prices = request.form.getlist("itemprice")
 
     grand_total = 0
-    max_items = 10
 
     for i in range(min(len(names), max_items)):
         try:
-            qty = int(qtys[i])
+            name  = names[i].strip()
+            qty   = int(qtys[i])
             price = int(prices[i])
         except (ValueError, IndexError):
             continue
 
-        if price <= 0:
+        # skip baris kosong / tidak valid
+        if not name or qty <= 0 or price <= 0:
             continue
 
         total = qty * price
         grand_total += total
+
         items.append(
             {
-                "name": names[i],
+                "name": name,
                 "qty": qty,
                 "price": price,
                 "total": total,
@@ -349,7 +362,7 @@ def generate_invoice():
     return render_template(
         "invoice_print_view.html",
         user=user,
-        customer=data.get("customername", ""),
+        customer=customer,
         items=items,
         grand_total=grand_total,
         template=template,
