@@ -137,10 +137,13 @@ def dashboard():
 
     if not user:
         class Guest:
-            id = None
-            username = "Tamu (Guest)"
-            is_premium = False
-            company_logo = None
-            company_address = None
-            signature_file = None
-        user = Guest
+            def __init__(self):
+                self.id = None
+                self.username = "Tamu (Guest)"
+                self.is_premium = False
+                self.company_logo = None
+                self.company_address = None
+                self.signature_file = None
+        user = Guest()
+
+    return render_template('dashboard.html', user=user)
