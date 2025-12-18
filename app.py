@@ -22,26 +22,26 @@ AZURE_DB_USER = 'adminlogintest'
 AZURE_DB_PASS = 'mpVYe8mXt8h2wdi'
 AZURE_DB_NAME = 'invoiceinaja'
 
-if not database_uri:
-    database_uri = f"mysql+pymysql://{AZURE_DB_USER}:{AZURE_DB_PASS}@{AZURE_DB_HOST}/{AZURE_DB_NAME}"
+# if not database_uri:
+#     database_uri = f"mysql+pymysql://{AZURE_DB_USER}:{AZURE_DB_PASS}@{AZURE_DB_HOST}/{AZURE_DB_NAME}"
 
-ssl_cert_path = os.path.join(basedir, "ssl", "combined-ca-certificates.pem")
+# ssl_cert_path = os.path.join(basedir, "ssl", "combined-ca-certificates.pem")
 
 if database_uri:
     app.config['SQLALCHEMY_DATABASE_URI'] = database_uri
 
-    # JIKA MAU PAKAI SSL, PASTIKAN FILE CA BENAR-BENAR ADA
-    if os.path.exists(ssl_cert_path):
-        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-            "connect_args": {
-                "ssl": {"ca": ssl_cert_path}
-            }
-        }
-        print(">>> SSL CERTIFICATE DITEMUKAN.")
-    else:
-        print(">>> WARNING: SSL CERTIFICATE TIDAK DITEMUKAN.")
+    # # JIKA MAU PAKAI SSL, PASTIKAN FILE CA BENAR-BENAR ADA
+    # if os.path.exists(ssl_cert_path):
+    #     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    #         "connect_args": {
+    #             "ssl": {"ca": ssl_cert_path}
+    #         }
+    #     }
+    #     print(">>> SSL CERTIFICATE DITEMUKAN.")
+    # else:
+    #     print(">>> WARNING: SSL CERTIFICATE TIDAK DITEMUKAN.")
 
-    print(f">>> MENGGUNAKAN DATABASE: {AZURE_DB_HOST}")
+    # print(f">>> MENGGUNAKAN DATABASE: {AZURE_DB_HOST}")
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'invoice.db')
     print(">>> MENGGUNAKAN DATABASE LOKAL.")
