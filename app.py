@@ -27,25 +27,15 @@ AZURE_DB_NAME = 'invoiceinaja'
 
 # ssl_cert_path = os.path.join(basedir, "ssl", "combined-ca-certificates.pem")
 
+if not database_uri:
+    # fallback: pakai Azure MySQL TANPA SSL
+    database_uri = f"mysql+pymysql://{AZURE_DB_USER}:{AZURE_DB_PASS}@{AZURE_DB_HOST}/{AZURE_DB_NAME}"
+
 if database_uri:
     app.config['SQLALCHEMY_DATABASE_URI'] = database_uri
-
-    # # JIKA MAU PAKAI SSL, PASTIKAN FILE CA BENAR-BENAR ADA
-    # if os.path.exists(ssl_cert_path):
-    #     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    #         "connect_args": {
-    #             "ssl": {"ca": ssl_cert_path}
-    #         }
-    #     }
-    #     print(">>> SSL CERTIFICATE DITEMUKAN.")
-    # else:
-    #     print(">>> WARNING: SSL CERTIFICATE TIDAK DITEMUKAN.")
-
-    # print(f">>> MENGGUNAKAN DATABASE: {AZURE_DB_HOST}")
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'invoice.db')
     print(">>> MENGGUNAKAN DATABASE LOKAL.")
-
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.config['UPLOAD_FOLDER'] = os.path.join(basedir, 'static/uploads')
