@@ -302,62 +302,58 @@ def payment_success():
 
 @app.route("/generate_invoice", methods=["POST"])
 def generate_invoice():
-    # tentukan user / guest
+    # ambil user / guest
     if "user_id" in session:
         user = User.query.get(session["user_id"])
     else:
         user = Guest()
 
-    data = request.form
+    f = request.form
 
-    # template dipilih dari radio button di dashboard.html (name="template")
-    template = data.get("template", "basic")
+    # Hidden inputs dari dashboard.html
+    template = f.get("template", "basic")
+    bg_color = f.get("bgcolor", "ffffff")
+    line_color = f.get("linecolor", "000000")
+    header_title = f.get("headertitle", "INVOICE")
 
-    # non-premium hanya boleh template basic
-    if not getattr(user, "is_premium", False) and template != "basic":
-        template = "basic"
+    # Rapikan value warna (dashboard kirim tanpa '#')
+    if bg_color and not bg_color.startswith("#"):
+        bg_color = "#" + bg_color
+    if line_color and not line_color.startswith("#"):
+        line_color = "#" + line_color
 
-    # hidden input yang diisi JS saat submit (lihat id finalHeaderTitle, finalBgColor, finalLineColor)
-    header_title = data.get("headertitle", "INVOICE")
-    bg_color     = data.get("bgcolor", "#ffffff")
-    line_color   = data.get("linecolor", "#000000")
+    # Field customer dari dashboard.html
+    customer = (f.get("customername") or "").strip()
 
-    # field "Kepada Yth" di dashboard.html (name="customername")
-    customer = data.get("customername", "").strip()
+    # Item fields dari dashboard.html
+    names = f.getlist("itemname")
+    qtys = f.getlist("itemqty")
+    prices = f.getlist("itemprice")
 
     items = []
+    grand_total = 0
     max_items = 10
 
-    # nama field item mengikuti dashboard.html: itemname, itemqty, itemprice
-    names  = request.form.getlist("itemname")
-    qtys   = request.form.getlist("itemqty")
-    prices = request.form.getlist("itemprice")
-
-    grand_total = 0
-
-    for i in range(min(len(names), max_items)):
+    for i in range(min(len(names), len(qtys), len(prices), max_items)):
+        name = (names[i] or "").strip()
         try:
-            name  = names[i].strip()
-            qty   = int(qtys[i])
+            qty = int(qtys[i])
             price = int(prices[i])
-        except (ValueError, IndexError):
+        except (ValueError, TypeError):
             continue
 
-        # skip baris kosong / tidak valid
         if not name or qty <= 0 or price <= 0:
             continue
 
         total = qty * price
         grand_total += total
-
         items.append(
-            {
-                "name": name,
-                "qty": qty,
-                "price": price,
-                "total": total,
-            }
+            {"name": name, "qty": qty, "price": price, "total": total}
         )
+
+    print("DEBUG customer:", customer)
+    print("DEBUG items:", items)
+
 
     return render_template(
         "invoice_print_view.html",
