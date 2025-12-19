@@ -6,14 +6,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <style>
-        @media print { 
-            .no-print { display: none !important; } 
+        @media print {
+            .no-print { display: none !important; }
             body { background: white; margin: 0; padding: 0; -webkit-print-color-adjust: exact; }
             .page { box-shadow: none !important; margin: 0 !important; width: 100% !important; border: none !important; }
         }
-        
+
         body { background: #e5e7eb; font-family: 'Inter', sans-serif; }
         .page {
             width: 21cm; min-height: 29.7cm; margin: 2cm auto; background: white;
@@ -42,14 +42,13 @@
         .modern td:first-child { border-left: 1px solid #f0f0f0; border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
         .modern td:last-child { border-right: 1px solid #f0f0f0; border-top-right-radius: 8px; border-bottom-right-radius: 8px; text-align: right; }
         .modern .total-box { background: #111; color: white; padding: 20px 30px; border-radius: 12px; float: right; margin-top: 30px; }
+
         .modern .footer { margin-top: 60px; border-top: 1px solid #eee; padding-top: 20px; display: flex; justify-content: space-between; align-items: flex-end; font-size: 0.8rem; color: #666; }
         .modern .signature-box { text-align: center; width: 150px; }
         .modern .sig-img { height: 60px; margin-bottom: 10px; object-fit: contain; }
         .modern .sig-line { border-top: 1px solid #ccc; margin-top: 5px; }
 
         .corporate { font-family: 'Noto Serif', serif; color: #333; }
-        .corporate-container { position: relative; z-index: 10; }
-
         .corporate .header-bar { height: 6px; width: 100%; margin-bottom: 30px; }
         .corporate .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid #ccc; }
         .corporate .logo-img { height: 60px; margin-bottom: 10px; filter: grayscale(100%); }
@@ -57,7 +56,6 @@
         .corporate .invoice-title { font-size: 2.2rem; font-weight: 700; text-transform: uppercase; margin: 0; letter-spacing: 3px; text-align: right; }
         .corporate .invoice-details { text-align: right; margin-top: 10px; font-family: 'Inter', sans-serif; font-size: 0.9rem; }
         .corporate .invoice-details p { margin: 2px 0; }
-
         .corporate .bill-to { margin-bottom: 30px; font-family: 'Inter', sans-serif; }
         .corporate .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #666; font-weight: bold; margin-bottom: 5px; }
         .corporate .customer-name { font-size: 1.4rem; font-weight: 700; color: #000; font-family: 'Noto Serif', serif; }
@@ -76,173 +74,179 @@
         .corporate .footer { margin-top: 80px; display: flex; justify-content: space-between; align-items: flex-end; font-family: 'Inter', sans-serif; }
         .corporate .address-box { width: 50%; font-size: 0.85rem; line-height: 1.6; color: #555; text-align: left; }
         .corporate .address-title { font-weight: bold; text-transform: uppercase; margin-bottom: 5px; font-size: 0.75rem; color: #000; }
-        
+
         .corporate .signature-box { text-align: center; width: 220px; }
         .corporate .sig-title { font-size: 0.8rem; margin-bottom: 50px; font-weight: 600; }
         .corporate .sig-img { height: 70px; margin-bottom: -10px; display: block; margin-left: auto; margin-right: auto; }
         .corporate .sig-line { border-top: 1px solid #000; padding-top: 5px; font-weight: bold; text-transform: uppercase; font-size: 0.9rem; margin-top: 5px; }
     </style>
 </head>
+
 <body>
+  <div class="page {{ template }}" style="background-color: {{ bg_color if template != 'basic' else '#fff' }};">
 
-    <div class="page {{ template }}" style="background-color: {{ bg_color if template != 'basic' else '#fff' }};">
-        
-        {% if template != 'basic' and user.company_logo %}
-            <img src="{{ url_for('static', filename='uploads/' + user.company_logo) }}" class="bg-watermark">
-        {% endif %}
-        
-        <div style="position: relative; z-index: 10;">
+    {% if template != 'basic' and user.company_logo %}
+      <img src="{{ url_for('static', filename='uploads/' + user.company_logo) }}" class="bg-watermark">
+    {% endif %}
 
-        {% if template == 'modern' %}
-            <div class="header">
-                <div>
-                    {% if user.company_logo %}
-                        <img src="{{ url_for('static', filename='uploads/' + user.company_logo) }}" class="logo-img">
-                    {% else %}
-                        <h2 class="text-2xl font-black uppercase">{{ user.username }}</h2>
-                    {% endif %}
-                </div>
-                <div style="text-align: right;">
-                    <h1>{{ header_title }}</h1>
-                    <p class="opacity-80 mt-1">#{{ range(100000, 999999)|random }}</p>
-                </div>
-            </div>
+    <div style="position: relative; z-index: 10;">
 
-        {% elif template == 'corporate' %}
-            <div class="header-bar" style="background-color: {{ line_color }};"></div>
-            <div class="header">
-                <div>
-                    {% if user.company_logo %}
-                        <img src="{{ url_for('static', filename='uploads/' + user.company_logo) }}" class="logo-img">
-                    {% endif %}
-                    <h2 class="company-name" style="color: {{ line_color }};">{{ user.username }} CORP.</h2>
-                </div>
-                <div>
-                    <h1 class="invoice-title" style="color: {{ line_color }};">{{ header_title }}</h1>
-                    <div class="invoice-details">
-                        <p><strong>No:</strong> INV/{{ date[-4:] }}/{{ range(100, 999)|random }}</p>
-                        <p><strong>Tanggal:</strong> {{ date }}</p>
-                    </div>
-                </div>
-            </div>
-
-        {% else %}
-            <h1>{{ header_title }}</h1>
-        {% endif %}
-
-        {% if template == 'corporate' %}
-            <div class="bill-to">
-                <p class="label">Ditagihkan Kepada:</p>
-                <h3 class="customer-name">{{ customer }}</h3>
-            </div>
-        {% else %}
-            <div class="mb-10 mt-8">
-                <p class="text-sm uppercase font-bold opacity-60">Kepada:</p>
-                <h3 class="text-3xl font-bold">{{ customer }}</h3>
-            </div>
-        {% endif %}
-
-        <table style="border-top: {{ '2px solid ' + line_color if template == 'corporate' else '' }};">
-            <thead>
-                <tr>
-                    <th style="color: {{ line_color if template == 'corporate' else '' }}; border-bottom-color: {{ line_color if template != 'basic' else '' }};">Deskripsi</th>
-                    <th style="width: 80px; text-align: center; color: {{ line_color if template == 'corporate' else '' }}; border-bottom-color: {{ line_color if template != 'basic' else '' }};">Qty</th>
-                    <th style="width: 160px; text-align: right; color: {{ line_color if template == 'corporate' else '' }}; border-bottom-color: {{ line_color if template != 'basic' else '' }};">Harga</th>
-                    <th style="width: 180px; text-align: right; color: {{ line_color if template == 'corporate' else '' }}; border-bottom-color: {{ line_color if template != 'basic' else '' }};">Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in items %}
-                <tr>
-                    <td style="border-bottom-color: {{ line_color if template == 'corporate' else '' }};">{{ item.name }}</td>
-                    <td style="text-align: center; border-bottom-color: {{ line_color if template == 'corporate' else '' }};">{{ item.qty }}</td>
-                    <td style="text-align: right; border-bottom-color: {{ line_color if template == 'corporate' else '' }};">Rp {{ "{:,.0f}".format(item.price) }}</td>
-                    <td style="text-align: right; border-bottom-color: {{ line_color if template == 'corporate' else '' }};">Rp {{ "{:,.0f}".format(item.total) }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <div class="mt-8 text-right">
-            {% if template == 'modern' %}
-                <div class="total-box" style="background-color: {{ line_color if line_color != '#000000' else '#111' }};">
-                    <span style="font-size: 0.8rem; text-transform: uppercase;">Total</span><br>
-                    <span style="font-size: 2rem; font-weight: 800;">Rp {{ "{:,.0f}".format(grand_total) }}</span>
-                </div>
-            {% elif template == 'corporate' %}
-                <div class="total-section">
-                    <div class="grand-total-row" style="border-top-color: {{ line_color }};">
-                        <span class="total-label">Grand Total</span>
-                        <span class="total-value" style="color: {{ line_color }};">Rp {{ "{:,.0f}".format(grand_total) }}</span>
-                    </div>
-                </div>
+      {% if template == 'modern' %}
+        <div class="header">
+          <div>
+            {% if user.company_logo %}
+              <img src="{{ url_for('static', filename='uploads/' + user.company_logo) }}" class="logo-img">
             {% else %}
-                <p style="font-weight: bold; font-size: 1.2rem;">TOTAL: Rp {{ "{:,.0f}".format(grand_total) }}</p>
+              <h2 class="text-2xl font-black uppercase">{{ user.username }}</h2>
             {% endif %}
+          </div>
+          <div style="text-align: right;">
+            <h1>{{ header_title }}</h1>
+            <p class="opacity-80 mt-1">#{{ range(100000, 999999)|random }}</p>
+          </div>
         </div>
-        <div style="clear: both;"></div>
 
-        {% if template != 'basic' %}
-            <div class="footer">
-
-                {% if template == 'corporate' %}
-                    <div class="address-box">
-                        {% if user.company_address %}
-                            <p class="address-title">Alamat Perusahaan:</p>
-                            <p style="white-space: pre-line;">{{ user.company_address }}</p>
-                        {% endif %}
-                    </div>
-
-                    <div class="signature-box">
-                        <p class="sig-title">Disetujui Oleh,</p>
-                        {% if user.signature_file %}
-                            <img src="{{ url_for('static', filename='uploads/' + user.signature_file) }}" class="sig-img">
-                        {% else %}
-                            <div style="height: 60px;"></div>
-                        {% endif %}
-                        <div class="sig-line" style="border-top-color: {{ line_color }};">{{ user.username }}</div>
-                        <p style="font-size: 0.8rem; color: #666;">Direktur Keuangan</p>
-                    </div>
-                {% endif %}
-
-                {% if template == 'modern' %}
-                    <div class="address-box" style="width: 50%;">
-                        {% if user.company_address %}
-                            <p style="font-weight: bold; margin-bottom: 5px;">Alamat:</p>
-                            <p style="white-space: pre-line;">{{ user.company_address }}</p>
-                        {% endif %}
-                    </div>
-                    <div class="signature-box">
-                        {% if user.signature_file %}
-                            <img src="{{ url_for('static', filename='uploads/' + user.signature_file) }}" class="sig-img">
-                        {% endif %}
-                        <p style="font-weight: bold;">{{ user.username }}</p>
-                        <div class="sig-line"></div>
-                        <p style="font-size: 0.7rem;">Authorized Signature</p>
-                    </div>
-                {% endif %}
-
+      {% elif template == 'corporate' %}
+        <div class="header-bar" style="background-color: {{ line_color }};"></div>
+        <div class="header">
+          <div>
+            {% if user.company_logo %}
+              <img src="{{ url_for('static', filename='uploads/' + user.company_logo) }}" class="logo-img">
+            {% endif %}
+            <h2 class="company-name" style="color: {{ line_color }};">{{ user.username }} CORP.</h2>
+          </div>
+          <div>
+            <h1 class="invoice-title" style="color: {{ line_color }};">{{ header_title }}</h1>
+            <div class="invoice-details">
+              <p><strong>No:</strong> INV/{{ date[-4:] }}/{{ range(100, 999)|random }}</p>
+              <p><strong>Tanggal:</strong> {{ date }}</p>
             </div>
-        {% endif %}
-
+          </div>
         </div>
-    </div>
+      {% else %}
+        <h1>{{ header_title }}</h1>
+      {% endif %}
 
-    <div class="fixed bottom-10 right-10 no-print flex gap-4">
-        <button onclick="window.close()" 
-                class="group flex items-center gap-2 bg-gray-600 text-white px-4 py-3 rounded-full shadow-lg hover:bg-gray-700 transition-all duration-300 hover:pr-6"
-                title="Tutup Preview">
-            <i class="fas fa-arrow-left text-lg"></i>
-            <span class="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap text-sm font-bold">Kembali</span>
-        </button>
+      {% if template == 'corporate' %}
+        <div class="bill-to">
+          <p class="label">Ditagihkan Kepada:</p>
+          <h3 class="customer-name">{{ customer if customer else '-' }}</h3>
+        </div>
+      {% else %}
+        <div class="mb-10 mt-8">
+          <p class="text-sm uppercase font-bold opacity-60">Kepada:</p>
+          <h3 class="text-3xl font-bold">{{ customer if customer else '-' }}</h3>
+        </div>
+      {% endif %}
 
-        <button onclick="window.print()" 
-                class="group flex items-center gap-2 bg-indigo-600 text-white px-4 py-3 rounded-full shadow-lg hover:bg-indigo-700 transition-all duration-300 hover:pr-6"
-                title="Cetak Sekarang">
-            <i class="fas fa-print text-lg"></i>
-            <span class="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap text-sm font-bold">Cetak</span>
-        </button>
+      <table style="border-top: {{ '2px solid ' + line_color if template == 'corporate' else '' }};">
+        <thead>
+          <tr>
+            <th style="color: {{ line_color if template == 'corporate' else '' }}; border-bottom-color: {{ line_color if template != 'basic' else '' }};">Deskripsi</th>
+            <th style="width: 80px; text-align: center; color: {{ line_color if template == 'corporate' else '' }}; border-bottom-color: {{ line_color if template != 'basic' else '' }};">Qty</th>
+            <th style="width: 160px; text-align: right; color: {{ line_color if template == 'corporate' else '' }}; border-bottom-color: {{ line_color if template != 'basic' else '' }};">Harga</th>
+            <th style="width: 180px; text-align: right; color: {{ line_color if template == 'corporate' else '' }}; border-bottom-color: {{ line_color if template != 'basic' else '' }};">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+            <tr>
+              <td style="border-bottom-color: {{ line_color if template == 'corporate' else '' }};">{{ item.name }}</td>
+              <td style="text-align: center; border-bottom-color: {{ line_color if template == 'corporate' else '' }};">{{ item.qty }}</td>
+              <td style="text-align: right; border-bottom-color: {{ line_color if template == 'corporate' else '' }};">Rp {{ "{:,.0f}".format(item.price) }}</td>
+              <td style="text-align: right; border-bottom-color: {{ line_color if template == 'corporate' else '' }};">Rp {{ "{:,.0f}".format(item.total) }}</td>
+            </tr>
+          {% endfor %}
+
+          {% if not items %}
+            <tr>
+              <td colspan="4" style="text-align:center; padding: 20px; opacity: .6;">
+                Tidak ada item (data form tidak terkirim).
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+
+      <div class="mt-8 text-right">
+        {% if template == 'modern' %}
+          <div class="total-box" style="background-color: {{ line_color if line_color != '#000000' else '#111' }};">
+            <span style="font-size: 0.8rem; text-transform: uppercase;">Total</span><br>
+            <span style="font-size: 2rem; font-weight: 800;">Rp {{ "{:,.0f}".format(grand_total) }}</span>
+          </div>
+        {% elif template == 'corporate' %}
+          <div class="total-section">
+            <div class="grand-total-row" style="border-top-color: {{ line_color }};">
+              <span class="total-label">Grand Total</span>
+              <span class="total-value" style="color: {{ line_color }};">Rp {{ "{:,.0f}".format(grand_total) }}</span>
+            </div>
+          </div>
+        {% else %}
+          <p style="font-weight: bold; font-size: 1.2rem;">TOTAL: Rp {{ "{:,.0f}".format(grand_total) }}</p>
+        {% endif %}
+      </div>
+
+      <div style="clear: both;"></div>
+
+      {% if template != 'basic' %}
+        <div class="footer">
+          {% if template == 'corporate' %}
+            <div class="address-box">
+              {% if user.company_address %}
+                <p class="address-title">Alamat Perusahaan:</p>
+                <p style="white-space: pre-line;">{{ user.company_address }}</p>
+              {% endif %}
+            </div>
+
+            <div class="signature-box">
+              <p class="sig-title">Disetujui Oleh,</p>
+              {% if user.signature_file %}
+                <img src="{{ url_for('static', filename='uploads/' + user.signature_file) }}" class="sig-img">
+              {% else %}
+                <div style="height: 60px;"></div>
+              {% endif %}
+              <div class="sig-line" style="border-top-color: {{ line_color }};">{{ user.username }}</div>
+              <p style="font-size: 0.8rem; color: #666;">Direktur Keuangan</p>
+            </div>
+          {% endif %}
+
+          {% if template == 'modern' %}
+            <div class="address-box" style="width: 50%;">
+              {% if user.company_address %}
+                <p style="font-weight: bold; margin-bottom: 5px;">Alamat:</p>
+                <p style="white-space: pre-line;">{{ user.company_address }}</p>
+              {% endif %}
+            </div>
+            <div class="signature-box">
+              {% if user.signature_file %}
+                <img src="{{ url_for('static', filename='uploads/' + user.signature_file) }}" class="sig-img">
+              {% endif %}
+              <p style="font-weight: bold;">{{ user.username }}</p>
+              <div class="sig-line"></div>
+              <p style="font-size: 0.7rem;">Authorized Signature</p>
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
+
     </div>
+  </div>
+
+  <div class="fixed bottom-10 right-10 no-print flex gap-4">
+    <button onclick="window.close()"
+            class="group flex items-center gap-2 bg-gray-600 text-white px-4 py-3 rounded-full shadow-lg hover:bg-gray-700 transition-all duration-300 hover:pr-6"
+            title="Tutup Preview">
+      <i class="fas fa-arrow-left text-lg"></i>
+      <span class="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap text-sm font-bold">Kembali</span>
+    </button>
+
+    <button onclick="window.print()"
+            class="group flex items-center gap-2 bg-indigo-600 text-white px-4 py-3 rounded-full shadow-lg hover:bg-indigo-700 transition-all duration-300 hover:pr-6"
+            title="Cetak Sekarang">
+      <i class="fas fa-print text-lg"></i>
+      <span class="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 whitespace-nowrap text-sm font-bold">Cetak</span>
+    </button>
+  </div>
 
 </body>
 </html>
