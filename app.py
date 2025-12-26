@@ -2,7 +2,8 @@ import os
 import time
 from datetime import datetime, timedelta
 from sqlalchemy import func
-from werkzeug.security import check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
+
 # Load environment variables untuk development lokal
 from dotenv import load_dotenv
 load_dotenv()  # Load .env file
@@ -86,7 +87,12 @@ google = oauth.register(
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
-    password = db.Column(db.String(100), nullable=False)
+
+    # hash biasanya > 100 char, jadi harus lebih panjang
+    password = db.Column(db.String(255), nullable=True)
+
+    is_admin = db.Column(db.Boolean, default=False)
+
     is_premium = db.Column(db.Boolean, default=False)
     premium_expiry = db.Column(db.DateTime, nullable=True)
     company_logo = db.Column(db.String(200), nullable=True)
@@ -108,12 +114,13 @@ def init_db():
             db.create_all()
             print(">>> SUKSES: Tabel Database Siap.")
             try:
-                if not User.query.filter_by(username="user_demo").first():
+               if not User.query.filter_by(username="user_demo").first():
                     db.session.add(
                         User(
                             username="user_demo",
-                            password="123",
+                            password=generate_password_hash("123"),
                             is_premium=False,
+                            is_admin=False,
                         )
                     )
                     db.session.commit()
@@ -122,7 +129,6 @@ def init_db():
                 db.session.rollback()
         except Exception as e:
             print(f">>> ERROR DATABASE: {e}")
-
 
 # --- HELPER GUEST ---
 class Guest:
@@ -135,6 +141,17 @@ class Guest:
         self.signature_file = None
         self.is_admin = False
 
+def get_current_user():
+    uid = session.get("user_id")
+    if not uid:
+        return None
+    return User.query.get(uid)
+
+def require_admin_user():
+    u = get_current_user()
+    if not u or not getattr(u, "is_admin", False):
+        return None
+    return u
 
 # --- ROUTES ---
 
@@ -143,15 +160,15 @@ def admin_page():
     admin = require_admin_user()
     if not admin:
         return redirect(url_for("login", next=request.path))
-    return render_template("dashboard_admin.html")
+    return render_template("dashboard_admin.html", admin=admin)
 
 
 @app.route("/admin/analytics")
 def admin_analytics():
-    admin = require_admin()
+    admin = require_admin_user()
     if not admin:
         flash("Access denied.", "error")
-        return redirect(url_for("login"))
+        return redirect(url_for("login", next=request.path))
 
     start = datetime.now() - timedelta(days=7)
 
@@ -173,10 +190,10 @@ def admin_analytics():
 
 @app.route("/admin/users")
 def admin_users():
-    admin = require_admin()
+    admin = require_admin_user()
     if not admin:
         flash("Access denied.", "error")
-        return redirect(url_for("login"))
+        return redirect(url_for("login", next=request.path))
 
     users = User.query.order_by(User.id.desc()).all()
 
@@ -201,27 +218,38 @@ def index():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        username = request.form.get("username", "")
+        username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
 
         try:
             user = User.query.filter_by(username=username).first()
 
-            if user and check_password_hash(user.password, password):
-                session["user_id"] = user.id
-                flash("Login Berhasil!", "success")
+            # user tidak ada
+            if not user:
+                flash("Username atau Password salah.", "error")
+                return render_template("login.html")
 
-                # kalau login dari /admin (atau page lain) bisa balik ke tujuan awal
-                next_url = request.args.get("next") or request.form.get("next")
-                if next_url:
-                    return redirect(next_url)
+            # user OAuth (password kosong / None) jangan boleh login via form password
+            if not user.password:
+                flash("Akun ini terdaftar via Google. Silakan login dengan Google.", "error")
+                return render_template("login.html")
 
-                # redirect berdasarkan role
-                if getattr(user, "is_admin", False):
-                    return redirect(url_for("admin_page"))
-                return redirect(url_for("dashboard"))
+            # verifikasi hash
+            if not check_password_hash(user.password, password):
+                flash("Username atau Password salah.", "error")
+                return render_template("login.html")
 
-            flash("Username atau Password salah.", "error")
+            session["user_id"] = user.id
+            flash("Login Berhasil!", "success")
+
+            next_url = request.args.get("next") or request.form.get("next")
+            if next_url:
+                return redirect(next_url)
+
+            if getattr(user, "is_admin", False):
+                return redirect(url_for("admin_page"))
+
+            return redirect(url_for("dashboard"))
 
         except Exception as e:
             flash(f"Database Error: {str(e)}", "error")
@@ -230,25 +258,32 @@ def login():
 
 @app.route("/register", methods=["POST"])
 def register():
-    username = request.form["username"]
+    username = request.form["username"].strip()
     password = request.form["password"]
+
     try:
         if User.query.filter_by(username=username).first():
             flash("Username sudah dipakai.", "error")
             return redirect(url_for("login"))
 
-        new_user = User(username=username, password=password, is_premium=False)
+        new_user = User(
+            username=username,
+            password=generate_password_hash(password),
+            is_premium=False,
+            is_admin=False,
+        )
         db.session.add(new_user)
         db.session.commit()
         flash("Pendaftaran Berhasil! Silakan Login.", "success")
+
     except Exception as e:
+        db.session.rollback()
         flash(f"Error Register: {str(e)}", "error")
+
     return redirect(url_for("login"))
 
 
 # --- GOOGLE OAUTH ROUTES ---
-
-
 @app.route("/login/google")
 def google_login():
     redirect_uri = url_for('google_callback', _external=True, _scheme='https')
@@ -307,7 +342,7 @@ def google_callback():
             print(f">>> [OAuth] Creating new user: {email}")
             user = User(
                 username=email,
-                password='',  # OAuth user tidak pakai password
+                password=None,  # OAuth user tidak pakai password
                 is_premium=False
             )
             db.session.add(user)
