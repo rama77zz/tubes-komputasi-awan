@@ -160,7 +160,7 @@ def admin_page():
     admin = require_admin_user()
     if not admin:
         return redirect(url_for("login", next=request.path))
-    return render_template("dashboard_admin.html", admin=admin)
+    return render_template("dashboard_admin.html", admin=admin, labels=labels, data=data, rows=rows)
 
 
 @app.route("/admin/analytics")
