@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>Admin - Analytics</title>
+</head>
+<body class="bg-gray-100">
+  <div class="max-w-5xl mx-auto p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-2xl font-bold">Grafik Pengunjung (7 hari)</h1>
+      <a class="text-indigo-600 hover:underline" href="{{ url_for('dashboard') }}">Kembali</a>
+    </div>
+
+    <div class="bg-white rounded-xl shadow border p-4">
+      <canvas id="visitsChart" height="90"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const ctx = document.getElementById('visitsChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: {{ labels | tojson }},
+        datasets: [{
+          label: 'Kunjungan',
+          data: {{ data | tojson }},
+          borderWidth: 2,
+          tension: 0.3
+        }]
+      },
+      options: { responsive: true }
+    });
+  </script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 import os
 import time
 from datetime import datetime, timedelta
+from sqlalchemy import func
 
 # Load environment variables untuk development lokal
 from dotenv import load_dotenv
@@ -92,6 +93,13 @@ class User(db.Model):
     company_address = db.Column(db.String(500), nullable=True)
     signature_file = db.Column(db.String(200), nullable=True)
 
+class PageVisit(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    ts = db.Column(db.DateTime, default=datetime.now, index=True)
+    path = db.Column(db.String(255), nullable=False)
+    user_id = db.Column(db.Integer, nullable=True)
+
+
 
 # --- INIT DB ---
 
@@ -119,8 +127,6 @@ def init_db():
 
 
 # --- HELPER GUEST ---
-
-
 class Guest:
     def __init__(self):
         self.id = None
@@ -129,9 +135,64 @@ class Guest:
         self.company_logo = None
         self.company_address = None
         self.signature_file = None
+        self.is_admin = False
 
 
 # --- ROUTES ---
+
+@app.route("/admin")
+def admin_page():
+    admin = require_admin_user()
+    if not admin:
+        abort(403)
+    return render_template("dashboard_admin.html")
+
+@app.route("/admin/analytics")
+def admin_analytics():
+    admin = require_admin()
+    if not admin:
+        flash("Access denied.", "error")
+        return redirect(url_for("login"))
+
+    start = datetime.now() - timedelta(days=7)
+
+    rows = (
+        db.session.query(
+            func.date(PageVisit.ts).label("d"),
+            func.count(PageVisit.id).label("c"),
+        )
+        .filter(PageVisit.ts >= start)
+        .group_by(func.date(PageVisit.ts))
+        .order_by(func.date(PageVisit.ts))
+        .all()
+    )
+
+    labels = [str(r.d) for r in rows]
+    data = [int(r.c) for r in rows]
+
+    return render_template("admin_analytics.html", admin=admin, labels=labels, data=data)
+
+@app.route("/admin/users")
+def admin_users():
+    admin = require_admin()
+    if not admin:
+        flash("Access denied.", "error")
+        return redirect(url_for("login"))
+
+    users = User.query.order_by(User.id.desc()).all()
+
+    now = datetime.now()
+    rows = []
+    for u in users:
+        subscribed = bool(u.is_premium and u.premium_expiry and u.premium_expiry > now)
+        rows.append({
+            "id": u.id,
+            "username": u.username,
+            "subscribed": subscribed,
+            "premium_expiry": u.premium_expiry
+        })
+
+    return render_template("dashboard_admin.html", admin=admin, rows=rows)
 
 
 @app.route("/")
@@ -185,6 +246,24 @@ def google_login():
     redirect_uri = url_for('google_callback', _external=True, _scheme='https')
     return google.authorize_redirect(redirect_uri)
 
+
+@app.before_request
+def track_visit():
+    # catat hanya GET dan bukan static
+    if request.method != "GET":
+        return
+    if request.path.startswith("/static"):
+        return
+    # opsional: jangan catat endpoint admin agar data tidak bias
+    if request.path.startswith("/admin"):
+        return
+
+    try:
+        v = PageVisit(path=request.path, user_id=session.get("user_id"))
+        db.session.add(v)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 
 @app.route("/login/google/callback")
