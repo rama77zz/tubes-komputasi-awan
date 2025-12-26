@@ -16,7 +16,7 @@
         alt="Logo Aplikasi"
         onerror="this.style.display='none'; document.getElementById('backupLogo').classList.remove('hidden');">
       <div id="backupLogo" class="hidden font-bold">InvoiceInAja</div>
-      {% if user.id %}
+      {% if admin and admin.id %}
       <div>
         <a href="{{ url_for('logout') }}" class="text-gray-500 hover:text-red-500 ml-2 transition" title="Keluar">
           <i class="fas fa-sign-out-alt fa-lg"></i>
