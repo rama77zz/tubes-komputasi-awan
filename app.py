@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import func
 from werkzeug.security import generate_password_hash, check_password_hash
 
+
 # Load environment variables untuk development lokal
 from dotenv import load_dotenv
 load_dotenv()  # Load .env file
@@ -154,12 +155,40 @@ def require_admin_user():
     return u
 
 # --- ROUTES ---
-
 @app.route("/admin")
 def admin_page():
     admin = require_admin_user()
     if not admin:
         return redirect(url_for("login", next=request.path))
+
+    # 1) data grafik (contoh: 7 hari)
+    start = datetime.now() - timedelta(days=7)
+    visit_rows = (
+        db.session.query(
+            func.date(PageVisit.ts).label("d"),
+            func.count(PageVisit.id).label("c"),
+        )
+        .filter(PageVisit.ts >= start)
+        .group_by(func.date(PageVisit.ts))
+        .order_by(func.date(PageVisit.ts))
+        .all()
+    )
+    labels = [str(r.d) for r in visit_rows]
+    data = [int(r.c) for r in visit_rows]
+
+    # 2) daftar user (punyamu)
+    users = User.query.order_by(User.id.desc()).all()
+    now = datetime.now()
+    rows = []
+    for u in users:
+        subscribed = bool(u.is_premium and u.premium_expiry and u.premium_expiry > now)
+        rows.append({
+            "id": u.id,
+            "username": u.username,
+            "subscribed": subscribed,
+            "premium_expiry": u.premium_expiry,
+        })
+
     return render_template("dashboard_admin.html", admin=admin, labels=labels, data=data, rows=rows)
 
 
