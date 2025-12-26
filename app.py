@@ -99,14 +99,19 @@ class User(db.Model):
     company_logo = db.Column(db.String(200), nullable=True)
     company_address = db.Column(db.String(500), nullable=True)
     signature_file = db.Column(db.String(200), nullable=True)
+    company_name = db.Column(db.String(120), nullable=True)       # Nama perusahaan custom
+    signature_name = db.Column(db.String(120), nullable=True)     # Nama penanda tangan custom
+    signature_title = db.Column(db.String(120), nullable=True)    # Jabatan/posisi (opsional)
+
+    @property
+    def public_id(self):
+        return f"INVNJ-{self.id}"
 
 class PageVisit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     ts = db.Column(db.DateTime, default=datetime.now, index=True)
     path = db.Column(db.String(255), nullable=False)
     user_id = db.Column(db.Integer, nullable=True)
-
-
 
 # --- INIT DB ---
 def init_db():
@@ -161,7 +166,9 @@ def admin_page():
     if not admin:
         return redirect(url_for("login", next=request.path))
 
-    # 1) data grafik (contoh: 7 hari)
+    # =========================
+    # 1) DATA GRAFIK (7 hari)
+    # =========================
     start = datetime.now() - timedelta(days=7)
     visit_rows = (
         db.session.query(
@@ -176,8 +183,29 @@ def admin_page():
     labels = [str(r.d) for r in visit_rows]
     data = [int(r.c) for r in visit_rows]
 
-    # 2) daftar user (punyamu)
-    users = User.query.order_by(User.id.desc()).all()
+    # =========================
+    # 2) SORTING USERS (toggle)
+    # =========================
+    sort = request.args.get("sort", "expiry")   # default: urut expiry
+    direction = request.args.get("dir", "asc")  # asc: paling cepat habis di atas
+
+    FAR_FUTURE = datetime(2999, 1, 1)
+    expiry_key = func.coalesce(User.premium_expiry, FAR_FUTURE)
+
+    q = User.query
+
+    if sort == "expiry":
+        q = q.order_by(expiry_key.asc() if direction == "asc" else expiry_key.desc())
+    elif sort == "id":
+        q = q.order_by(User.id.asc() if direction == "asc" else User.id.desc())
+    else:
+        q = q.order_by(expiry_key.asc())
+
+    users = q.all()
+
+    # =========================
+    # 3) BUILD ROWS
+    # =========================
     now = datetime.now()
     rows = []
     for u in users:
@@ -189,9 +217,17 @@ def admin_page():
             "premium_expiry": u.premium_expiry,
         })
 
-    return render_template("dashboard_admin.html", admin=admin, labels=labels, data=data, rows=rows)
-
-
+    return render_template(
+        "dashboard_admin.html",
+        admin=admin,
+        user=admin,          # penting kalau template masih pakai user.id / user.username
+        labels=labels,
+        data=data,
+        rows=rows,
+        sort=sort,           # dikirim ke template untuk bikin link toggle
+        dir=direction
+    )
+    
 @app.route("/admin/analytics")
 def admin_analytics():
     admin = require_admin_user()
@@ -239,6 +275,29 @@ def admin_users():
 
     return render_template("dashboard_admin.html", admin=admin, rows=rows)
 
+@app.route("/premium/profile", methods=["POST"])
+def premium_profile():
+    if "user_id" not in session:
+        return jsonify(error="Login required"), 401
+
+    user = User.query.get(session["user_id"])
+    if not user or not user.is_premium:
+        return jsonify(error="Premium only"), 403
+
+    payload = request.get_json(silent=True) or {}
+
+    def clean(key, maxlen):
+        v = (payload.get(key) or "").strip()
+        if not v:
+            return None
+        return v[:maxlen]
+
+    user.company_name = clean("company_name", 160)
+    user.signature_name = clean("signature_name", 120)
+    user.signature_title = clean("signature_title", 120)
+
+    db.session.commit()
+    return jsonify(success=True)
 
 @app.route("/")
 def index():
@@ -444,6 +503,32 @@ def upload_logo():
         return jsonify({"success": True, "filename": filename})
 
     return jsonify({"error": "Upload gagal"}), 400
+
+@app.route("/update-invoice-profile", methods=["POST"])
+def update_invoice_profile():
+    if "user_id" not in session:
+        return jsonify(error="Login required"), 401
+
+    user = User.query.get(session["user_id"])
+    if not user or not user.is_premium:
+        return jsonify(error="Premium only"), 403
+
+    payload = request.get_json() or {}
+
+    company_name = (payload.get("company_name") or "").strip()
+    signature_name = (payload.get("signature_name") or "").strip()
+    signature_title = (payload.get("signature_title") or "").strip()
+
+    # validasi ringan
+    if len(company_name) > 120 or len(signature_name) > 120 or len(signature_title) > 120:
+        return jsonify(error="Terlalu panjang."), 400
+
+    user.company_name = company_name or None
+    user.signature_name = signature_name or None
+    user.signature_title = signature_title or None
+    db.session.commit()
+
+    return jsonify(success=True)
 
 
 @app.route("/upload_signature", methods=["POST"])
