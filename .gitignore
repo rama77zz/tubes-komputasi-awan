@@ -1,0 +1,52 @@
+# ============================================
+# .gitignore untuk Proyek InvoiceInAja
+# ============================================
+
+# Credentials & Secrets (JANGAN COMMIT!)
+.env
+.env.local
+.env.production
+
+# Python
+*.pyc
+*.pyo
+__pycache__/
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# Flask
+instance/
+.webassets-cache
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Azure (kalau ada config lokal)
+local.settings.json
