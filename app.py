@@ -2,7 +2,7 @@ import os
 import time
 from datetime import datetime, timedelta
 from sqlalchemy import func
-
+from werkzeug.security import check_password_hash
 # Load environment variables untuk development lokal
 from dotenv import load_dotenv
 load_dotenv()  # Load .env file
@@ -102,8 +102,6 @@ class PageVisit(db.Model):
 
 
 # --- INIT DB ---
-
-
 def init_db():
     with app.app_context():
         try:
@@ -144,8 +142,9 @@ class Guest:
 def admin_page():
     admin = require_admin_user()
     if not admin:
-        abort(403)
+        return redirect(url_for("login", next=request.path))
     return render_template("dashboard_admin.html")
+
 
 @app.route("/admin/analytics")
 def admin_analytics():
@@ -199,26 +198,35 @@ def admin_users():
 def index():
     return redirect(url_for("dashboard"))
 
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
+        username = request.form.get("username", "")
+        password = request.form.get("password", "")
+
         try:
-            user = User.query.filter_by(
-                username=username, password=password
-            ).first()
-            if user:
+            user = User.query.filter_by(username=username).first()
+
+            if user and check_password_hash(user.password, password):
                 session["user_id"] = user.id
                 flash("Login Berhasil!", "success")
+
+                # kalau login dari /admin (atau page lain) bisa balik ke tujuan awal
+                next_url = request.args.get("next") or request.form.get("next")
+                if next_url:
+                    return redirect(next_url)
+
+                # redirect berdasarkan role
+                if getattr(user, "is_admin", False):
+                    return redirect(url_for("admin_page"))
                 return redirect(url_for("dashboard"))
-            else:
-                flash("Username atau Password salah.", "error")
+
+            flash("Username atau Password salah.", "error")
+
         except Exception as e:
             flash(f"Database Error: {str(e)}", "error")
-    return render_template("login.html")
 
+    return render_template("login.html")
 
 @app.route("/register", methods=["POST"])
 def register():
