@@ -1,6 +1,61 @@
 import os
 import time
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
+load_dotenv()  # Load .env file
+
+
+app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID')
+app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET')
+
+oauth = OAuth(app)
+
+google = oauth.register(
+    name='google',
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_id=app.config['GOOGLE_CLIENT_ID'],
+    client_secret=app.config['GOOGLE_CLIENT_SECRET'],
+    client_kwargs={
+        'scope': 'openid email profile',
+        'prompt': 'select_account'
+    }
+)
+
+@app.route("/login/google")
+def google_login():
+    redirect_uri = url_for('google_callback', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+@app.route("/login/google/callback")
+def google_callback():
+    try:
+        token = google.authorize_access_token()
+        user_info = token.get('userinfo')
+        
+        email = user_info.get('email')
+        name = user_info.get('name', email.split('@')[0])
+        
+        user = User.query.filter_by(username=email).first()
+        
+        if not user:
+            user = User(
+                username=email,
+                password='',
+                is_premium=False
+            )
+            db.session.add(user)
+            db.session.commit()
+        
+        session['user_id'] = user.id
+        flash(f"Selamat datang, {name}!", "success")
+        return redirect(url_for('dashboard'))
+    
+    except Exception as e:
+        print(f">>> ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        flash(f"Login gagal: {str(e)}", "error")
+        return redirect(url_for('login'))
 
 from flask import (
     Flask, render_template, request, redirect,
