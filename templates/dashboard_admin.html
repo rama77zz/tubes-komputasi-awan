@@ -9,22 +9,31 @@
 </head>
 
 <body class="bg-gray-100">
-  <nav
-    class="bg-white shadow-sm px-6 py-4 flex justify-between items-center sticky top-0 z-50 border-b border-gray-200">
-    <div class="flex items-center gap-2">
-      <img src="{{ url_for('static', filename='new1invoiceinaja.png') }}" class="h-10 w-auto object-contain"
-        alt="Logo Aplikasi"
-        onerror="this.style.display='none'; document.getElementById('backupLogo').classList.remove('hidden');">
-      <div id="backupLogo" class="hidden font-bold">InvoiceInAja</div>
-      {% if admin and admin.id %}
-      <div>
-        <a href="{{ url_for('logout') }}" class="text-gray-500 hover:text-red-500 ml-2 transition" title="Keluar">
-          <i class="fas fa-sign-out-alt fa-lg"></i>
-        </a>
-      </div>
-      {% endif %}
-    </div>
-  </nav>
+ <nav class="bg-white shadow-sm px-6 py-4 flex justify-between items-center sticky top-0 z-50 border-b border-gray-200">
+  <div class="flex items-center gap-2">
+    <img src="{{ url_for('static', filename='new1invoiceinaja.png') }}"
+         class="h-10 w-auto object-contain"
+         alt="Logo Aplikasi"
+         onerror="this.style.display='none'; document.getElementById('backupLogo').classList.remove('hidden');" />
+    <div id="backupLogo" class="hidden font-bold">InvoiceInAja</div>
+  </div>
+
+  {% if admin and admin.id %}
+  <div class="flex items-center gap-3">
+    <a href="{{ url_for('admin_dashboard') }}"
+       class="bg-indigo-600 text-white px-5 py-2 rounded-full text-sm hover:bg-indigo-700 font-bold shadow-sm transition">
+      Dashboard
+    </a>
+
+    <a href="{{ url_for('logout') }}"
+       class="text-gray-500 hover:text-red-500 transition"
+       title="Keluar">
+      <i class="fas fa-sign-out-alt fa-lg"></i>
+    </a>
+  </div>
+  {% endif %}
+</nav>
+
   <div class="max-w-7xl mx-auto p-6">
     <div class="flex items-center">
       <h1 class="text-2xl font-bold mb-2 text-gray-800">Admin Dashboard</h1>

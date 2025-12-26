@@ -83,8 +83,6 @@ google = oauth.register(
 )
 
 # --- MODEL DATABASE ---
-
-
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
@@ -158,6 +156,21 @@ def require_admin_user():
     if not u or not getattr(u, "is_admin", False):
         return None
     return u
+
+@app.route("/admin/dashboard")
+def admin_dashboard():
+    admin = require_admin_user()
+    if not admin:
+        return redirect(url_for("login", next=request.path))
+
+    # render tampilan persis seperti dashboard.html
+    # admin dikirim sebagai user supaya variabel {{ user.username }} tetap jalan
+    return render_template(
+        "dashboard.html",
+        user=admin,
+        admin=admin,
+        admin_page="dashboard"   # penanda untuk navbar admin (Kembali)
+    )
 
 # --- ROUTES ---
 @app.route("/admin")

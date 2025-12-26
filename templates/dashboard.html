@@ -29,35 +29,53 @@
     <div id="backupLogo" class="hidden font-bold">InvoiceInAja</div>
   </div>
 
-  <div class="flex items-center gap-4">
-    <div class="text-right hidden md:block">
-      <p class="font-semibold text-sm">{{ user.username }}</p>
-      {% if user.is_premium %}
-        <span class="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full font-bold border border-indigo-200">PREMIUM MEMBER</span>
-      {% elif user.id %}
-        <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold border border-green-200">FREE MEMBER</span>
-      {% else %}
-        <span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full font-bold border border-gray-300">MODE TAMU</span>
-      {% endif %}
+  {# ===== MODE ADMIN: hanya tombol kembali + logout ===== #}
+  {% if admin and admin.id %}
+    <div class="flex items-center gap-3">
+      <a href="{{ url_for('admin_page') }}"
+         class="bg-gray-700 text-white px-5 py-2 rounded-full text-sm hover:bg-gray-800 font-bold shadow-sm transition">
+         Kembali ke Panel Admin
+      </a>
+
+      <a href="{{ url_for('logout') }}"
+         class="text-gray-500 hover:text-red-500 ml-2 transition"
+         title="Keluar">
+        <i class="fas fa-sign-out-alt fa-lg"></i>
+      </a>
     </div>
 
-    {% if not user.is_premium %}
-      <button onclick="goPremium()"
-              class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-5 py-2 rounded-full shadow hover:shadow-md transition text-sm font-bold flex items-center gap-2 hover:scale-105">
-        <i class="fas fa-crown"></i> UPGRADE
-      </button>
-    {% endif %}
-
-   {% if user.id %}
-      <a href="{{ url_for('logout') }}" class="text-gray-500 hover:text-red-500 ml-2 transition" title="Keluar">
-          <i class="fas fa-sign-out-alt fa-lg"></i>
-      </a>
+  {# ===== MODE USER: navbar lama (punyamu) ===== #}
   {% else %}
-      <a href="{{ url_for('login') }}" class="bg-indigo-600 text-white px-5 py-2 rounded-full text-sm hover:bg-indigo-700 font-bold ml-2 shadow-sm transition">
-           Masuk / Daftar
-      </a>
+    <div class="flex items-center gap-4">
+      <div class="text-right hidden md:block">
+        <p class="font-semibold text-sm">{{ user.username }}</p>
+        {% if user.is_premium %}
+          <span class="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full font-bold border border-indigo-200">PREMIUM MEMBER</span>
+        {% elif user.id %}
+          <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-bold border border-green-200">FREE MEMBER</span>
+        {% else %}
+          <span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full font-bold border border-gray-300">MODE TAMU</span>
+        {% endif %}
+      </div>
+
+      {% if not user.is_premium %}
+        <button onclick="goPremium()"
+                class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-5 py-2 rounded-full shadow hover:shadow-md transition text-sm font-bold flex items-center gap-2 hover:scale-105">
+          <i class="fas fa-crown"></i> UPGRADE
+        </button>
+      {% endif %}
+
+      {% if user.id %}
+        <a href="{{ url_for('logout') }}" class="text-gray-500 hover:text-red-500 ml-2 transition" title="Keluar">
+          <i class="fas fa-sign-out-alt fa-lg"></i>
+        </a>
+      {% else %}
+        <a href="{{ url_for('login') }}" class="bg-indigo-600 text-white px-5 py-2 rounded-full text-sm hover:bg-indigo-700 font-bold ml-2 shadow-sm transition">
+          Masuk / Daftar
+        </a>
+      {% endif %}
+    </div>
   {% endif %}
-  </div>
 </nav>
 
 <div class="container mx-auto p-6 flex flex-col lg:flex-row gap-8">
