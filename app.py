@@ -1,61 +1,10 @@
 import os
 import time
 from datetime import datetime, timedelta
+
+# Load environment variables untuk development lokal
 from dotenv import load_dotenv
 load_dotenv()  # Load .env file
-
-
-app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID')
-app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET')
-
-oauth = OAuth(app)
-
-google = oauth.register(
-    name='google',
-    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-    client_id=app.config['GOOGLE_CLIENT_ID'],
-    client_secret=app.config['GOOGLE_CLIENT_SECRET'],
-    client_kwargs={
-        'scope': 'openid email profile',
-        'prompt': 'select_account'
-    }
-)
-
-@app.route("/login/google")
-def google_login():
-    redirect_uri = url_for('google_callback', _external=True)
-    return google.authorize_redirect(redirect_uri)
-
-@app.route("/login/google/callback")
-def google_callback():
-    try:
-        token = google.authorize_access_token()
-        user_info = token.get('userinfo')
-        
-        email = user_info.get('email')
-        name = user_info.get('name', email.split('@')[0])
-        
-        user = User.query.filter_by(username=email).first()
-        
-        if not user:
-            user = User(
-                username=email,
-                password='',
-                is_premium=False
-            )
-            db.session.add(user)
-            db.session.commit()
-        
-        session['user_id'] = user.id
-        flash(f"Selamat datang, {name}!", "success")
-        return redirect(url_for('dashboard'))
-    
-    except Exception as e:
-        print(f">>> ERROR: {e}")
-        import traceback
-        traceback.print_exc()
-        flash(f"Login gagal: {str(e)}", "error")
-        return redirect(url_for('login'))
 
 from flask import (
     Flask, render_template, request, redirect,
@@ -66,6 +15,9 @@ from werkzeug.utils import secure_filename
 
 import midtransclient
 import pymysql
+
+# OAuth imports
+from authlib.integrations.flask_client import OAuth
 
 # Mendaftarkan driver pymysql
 pymysql.install_as_MySQLdb()
@@ -105,6 +57,26 @@ snap = midtransclient.Snap(
     is_production=False,
     server_key=MIDTRANS_SERVER_KEY,
     client_key=MIDTRANS_CLIENT_KEY,
+)
+
+# --- KONFIGURASI OAUTH GOOGLE ---
+
+app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID', '')
+app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET', '')
+
+# Inisialisasi OAuth
+oauth = OAuth(app)
+
+# Register Google sebagai OAuth provider
+google = oauth.register(
+    name='google',
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_id=app.config['GOOGLE_CLIENT_ID'],
+    client_secret=app.config['GOOGLE_CLIENT_SECRET'],
+    client_kwargs={
+        'scope': 'openid email profile',
+        'prompt': 'select_account'
+    }
 )
 
 # --- MODEL DATABASE ---
@@ -205,9 +177,78 @@ def register():
     return redirect(url_for("login"))
 
 
+# --- GOOGLE OAUTH ROUTES ---
+
+
+@app.route("/login/google")
+def google_login():
+    """
+    Redirect user ke Google OAuth consent screen
+    """
+    redirect_uri = url_for('google_callback', _external=True)
+    print(f">>> [OAuth] Redirecting to Google with callback: {redirect_uri}")
+    return google.authorize_redirect(redirect_uri)
+
+
+@app.route("/login/google/callback")
+def google_callback():
+    """
+    Handle callback dari Google setelah user approve
+    """
+    try:
+        # Ambil access token dari Google
+        token = google.authorize_access_token()
+        user_info = token.get('userinfo')
+        
+        if not user_info:
+            flash("Gagal mendapatkan info user dari Google.", "error")
+            return redirect(url_for('login'))
+        
+        # Debug log
+        import json
+        print(f">>> [OAuth] Google user_info: {json.dumps(user_info, indent=2)}")
+        
+        email = user_info.get('email')
+        name = user_info.get('name', email.split('@')[0] if email else 'User')
+        
+        if not email:
+            flash("Email tidak ditemukan di akun Google.", "error")
+            return redirect(url_for('login'))
+        
+        # Cek apakah user sudah ada
+        user = User.query.filter_by(username=email).first()
+        
+        if not user:
+            # Auto-register user baru
+            print(f">>> [OAuth] Creating new user: {email}")
+            user = User(
+                username=email,
+                password='',  # OAuth user tidak pakai password
+                is_premium=False
+            )
+            db.session.add(user)
+            db.session.commit()
+            flash(f"Akun baru berhasil dibuat untuk {name}!", "success")
+        else:
+            print(f">>> [OAuth] Existing user logged in: {email}")
+        
+        # Set session (login)
+        session['user_id'] = user.id
+        flash(f"Selamat datang, {name}!", "success")
+        return redirect(url_for('dashboard'))
+    
+    except Exception as e:
+        print(f">>> [OAuth] ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        flash(f"Login gagal: {str(e)}", "error")
+        return redirect(url_for('login'))
+
+
 @app.route("/logout")
 def logout():
     session.clear()
+    flash("Anda telah logout.", "info")
     return redirect(url_for("dashboard"))
 
 
@@ -298,24 +339,28 @@ def update_address():
 @app.route("/get_payment_token", methods=["POST"])
 def get_payment_token():
     try:
-        print(">>> get_payment_token dipanggil")
+        print(">>> [Payment] get_payment_token dipanggil")
 
         uid = session.get("user_id") or session.get("userid")
-        print(">>> uid dari session =", uid)
+        print(f">>> [Payment] uid dari session: {uid}")
 
         if not uid:
-            print(">>> ERROR: user belum login")
+            print(">>> [Payment] ERROR: user belum login")
             return jsonify({"error": "login_required"}), 401
 
         user = User.query.get(uid)
-        print(">>> user =", user.username if user else None)
+        print(f">>> [Payment] user: {user.username if user else None}")
 
         if not user:
-            print(">>> ERROR: user tidak ditemukan di DB")
+            print(">>> [Payment] ERROR: user tidak ditemukan di DB")
             return jsonify({"error": "user_not_found"}), 401
 
         order_id = f"SUB-{user.id}-{int(time.time())}"
-        print(">>> order_id =", order_id)
+        print(f">>> [Payment] order_id: {order_id}")
+
+        # Gunakan email asli kalau user login via Google
+        email = user.username if '@' in user.username else "user@invoiceinaja.com"
+        first_name = user.username.split('@')[0] if '@' in user.username else user.username
 
         param = {
             "transaction_details": {
@@ -323,19 +368,19 @@ def get_payment_token():
                 "gross_amount": 50000,
             },
             "customer_details": {
-                "first_name": user.username,
-                "email": "user@lokal.com",
+                "first_name": first_name,
+                "email": email,
             },
         }
-        print(">>> param ke Midtrans =", param)
+        print(f">>> [Payment] param ke Midtrans: {param}")
 
         transaction = snap.create_transaction(param)
-        print(">>> transaction response =", transaction)
+        print(f">>> [Payment] transaction response: {transaction}")
 
         return jsonify({"token": transaction["token"]})
     except Exception as e:
         import traceback
-        print(">>> ERROR di get_payment_token:", e)
+        print(f">>> [Payment] ERROR di get_payment_token: {e}")
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
@@ -352,6 +397,9 @@ def payment_success():
     user.is_premium = True
     user.premium_expiry = datetime.now() + timedelta(days=30)
     db.session.commit()
+    
+    print(f">>> [Payment] User {user.username} upgraded to premium until {user.premium_expiry}")
+    
     return jsonify({"status": "success"})
 
 
@@ -406,9 +454,8 @@ def generate_invoice():
             {"name": name, "qty": qty, "price": price, "total": total}
         )
 
-    print("DEBUG customer:", customer)
-    print("DEBUG items:", items)
-
+    print(">>> [Invoice] customer:", customer)
+    print(">>> [Invoice] items:", items)
 
     return render_template(
         "invoice_print_view.html",
