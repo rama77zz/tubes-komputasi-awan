@@ -182,12 +182,9 @@ def register():
 
 @app.route("/login/google")
 def google_login():
-    """
-    Redirect user ke Google OAuth consent screen
-    """
-    redirect_uri = url_for('google_callback', _external=True)
-    print(f">>> [OAuth] Redirecting to Google with callback: {redirect_uri}")
+    redirect_uri = url_for('google_callback', _external=True, _scheme='https')
     return google.authorize_redirect(redirect_uri)
+
 
 
 @app.route("/login/google/callback")
