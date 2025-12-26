@@ -212,6 +212,7 @@ def admin_page():
         subscribed = bool(u.is_premium and u.premium_expiry and u.premium_expiry > now)
         rows.append({
             "id": u.id,
+            "public_id": u.public_id,   # <- tambahkan ini
             "username": u.username,
             "subscribed": subscribed,
             "premium_expiry": u.premium_expiry,
@@ -273,7 +274,7 @@ def admin_users():
             "premium_expiry": u.premium_expiry
         })
 
-    return render_template("dashboard_admin.html", admin=admin, rows=rows)
+    return redirect(url_for("admin_page"))
 
 @app.route("/premium/profile", methods=["POST"])
 def premium_profile():
@@ -503,33 +504,6 @@ def upload_logo():
         return jsonify({"success": True, "filename": filename})
 
     return jsonify({"error": "Upload gagal"}), 400
-
-@app.route("/update-invoice-profile", methods=["POST"])
-def update_invoice_profile():
-    if "user_id" not in session:
-        return jsonify(error="Login required"), 401
-
-    user = User.query.get(session["user_id"])
-    if not user or not user.is_premium:
-        return jsonify(error="Premium only"), 403
-
-    payload = request.get_json() or {}
-
-    company_name = (payload.get("company_name") or "").strip()
-    signature_name = (payload.get("signature_name") or "").strip()
-    signature_title = (payload.get("signature_title") or "").strip()
-
-    # validasi ringan
-    if len(company_name) > 120 or len(signature_name) > 120 or len(signature_title) > 120:
-        return jsonify(error="Terlalu panjang."), 400
-
-    user.company_name = company_name or None
-    user.signature_name = signature_name or None
-    user.signature_title = signature_title or None
-    db.session.commit()
-
-    return jsonify(success=True)
-
 
 @app.route("/upload_signature", methods=["POST"])
 def upload_signature():
