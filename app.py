@@ -169,7 +169,8 @@ def admin_dashboard():
         "dashboard.html",
         user=admin,
         admin=admin,
-        admin_page="dashboard"   # penanda untuk navbar admin (Kembali)
+        admin_page="dashboard",
+        client_key=MIDTRANS_CLIENT_KEY   # penanda untuk navbar admin (Kembali)
     )
 
 # --- ROUTES ---
@@ -229,8 +230,8 @@ def admin_page():
             "premium_expiry": u.premium_expiry.strftime("%Y-%m-%d %H:%M") if u.premium_expiry else "-"
         })
 
-    return render_template(
-        "dashboard_admin.html",
+     return render_template(
+        "dashboard_admin.html",  
         admin=admin,
         labels=labels,
         data=data_visits,
@@ -240,6 +241,7 @@ def admin_page():
         sort=sort,
         dir=direction
     )
+
     
 @app.route("/admin/analytics")
 def admin_analytics():
@@ -321,41 +323,37 @@ def login():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
-
+        
         try:
             user = User.query.filter_by(username=username).first()
-
-            # user tidak ada
+            
             if not user:
                 flash("Username atau Password salah.", "error")
                 return render_template("login.html")
-
-            # user OAuth (password kosong / None) jangan boleh login via form password
+            
             if not user.password:
                 flash("Akun ini terdaftar via Google. Silakan login dengan Google.", "error")
                 return render_template("login.html")
-
-            # verifikasi hash
+            
             if not check_password_hash(user.password, password):
                 flash("Username atau Password salah.", "error")
                 return render_template("login.html")
-
+            
             session["user_id"] = user.id
             flash("Login Berhasil!", "success")
-
-            next_url = request.args.get("next") or request.form.get("next")
-            if next_url:
-                return redirect(next_url)
-
+            
+            # PERBAIKAN: Arahkan admin ke /admin (bukan /admin/dashboard)
             if getattr(user, "is_admin", False):
-                return redirect(url_for("admin_page"))
-
-            return redirect(url_for("dashboard"))
-
+                return redirect(url_for("admin_page"))  # Sudah benar
+            
+            return redirect(url_for("dashboard"))  # User biasa ke dashboard
+            
         except Exception as e:
             flash(f"Database Error: {str(e)}", "error")
-
+            return render_template("login.html")
+    
     return render_template("login.html")
+
 
 @app.route("/register", methods=["POST"])
 def register():
