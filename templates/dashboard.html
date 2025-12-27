@@ -404,25 +404,46 @@
     document.getElementById("finalHeaderTitle").value = document.getElementById("headerTitleInput").value || "INVOICE";
   }
 
-  async function submitInvoice() {
+// Perbaikan function submitInvoice di dashboard.html
+async function submitInvoice() {
     const form = document.getElementById("invoiceForm");
     if (!form.reportValidity()) return;
-
+    
     syncHiddenFields();
     const fd = new FormData(form);
-
-    try {
-      const res = await fetch("/generate-invoice", { method: "POST", body: fd });
-      const html = await res.text();
-      const w = window.open("", "_blank");
-      w.document.open();
-      w.document.write(html);
-      w.document.close();
-    } catch (e) {
-      console.error(e);
-      alert("Gagal mengirim data invoice. Coba lagi.");
+    
+    // Debug: tampilkan data yang dikirim
+    console.log("=== SENDING INVOICE DATA ===");
+    for (let [key, value] of fd.entries()) {
+        console.log(`${key}: ${value}`);
     }
-  }
+    
+    try {
+        const res = await fetch("/generate-invoice", {
+            method: "POST",
+            body: fd
+        });
+        
+        console.log("Response status:", res.status);
+        
+        if (!res.ok) {
+            const errorText = await res.text();
+            console.error("Error response:", errorText);
+            alert(`Gagal generate invoice. Status: ${res.status}`);
+            return;
+        }
+        
+        const html = await res.text();
+        const w = window.open("", "_blank");
+        w.document.open();
+        w.document.write(html);
+        w.document.close();
+        
+    } catch (e) {
+        console.error("Fetch error:", e);
+        alert("Gagal mengirim data invoice. Cek console browser untuk detail.");
+    }
+}
 
   async function uploadFile(type) {
     const fileInput = document.getElementById(type === "logo" ? "logoIn" : "sigIn");

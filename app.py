@@ -391,29 +391,64 @@ def register():
 # --- GOOGLE OAUTH ROUTES ---
 @app.route("/login/google")
 def login_google():
-    # Pastikan redirect_uri menggunakan HTTPS jika di Azure
-    redirect_uri = url_for("auth_google", _external=True)
+    """Mulai OAuth flow ke Google"""
+    # PENTING: Gunakan /login/google/callback sebagai redirect_uri
+    redirect_uri = url_for("google_callback", _external=True)
+    
+    # Force HTTPS untuk Azure Web App
     if "azurewebsites.net" in redirect_uri:
         redirect_uri = redirect_uri.replace("http://", "https://")
+    
     return oauth.google.authorize_redirect(redirect_uri)
 
-@app.route("/auth/google")
-def auth_google():
-    token = oauth.google.authorize_access_token()
-    user_info = token.get('userinfo')
-    if not user_info:
-        flash("Gagal mengambil info user dari Google")
-        return redirect(url_for("login"))
-    
-    # Cari atau buat user berdasarkan email Google
-    user = User.query.filter_by(username=user_info['email']).first()
-    if not user:
-        user = User(username=user_info['email'], public_id=str(uuid.uuid4()))
-        db.session.add(user)
-        db.session.commit()
-    
-    session["user_id"] = user.id
-    return redirect(url_for("dashboard"))
+
+@app.route("/login/google/callback")
+def google_callback():
+    """
+    Handle callback dari Google setelah user approve
+    """
+    try:
+        # Ambil access token dari Google
+        token = oauth.google.authorize_access_token()
+        user_info = token.get('userinfo')
+        
+        if not user_info:
+            flash("Gagal mendapatkan info user dari Google.", "error")
+            return redirect(url_for('login'))
+        
+        email = user_info.get('email')
+        name = user_info.get('name', email.split('@')[0] if email else 'User')
+        
+        if not email:
+            flash("Email tidak ditemukan di akun Google.", "error")
+            return redirect(url_for('login'))
+        
+        # Cek apakah user sudah ada
+        user = User.query.filter_by(username=email).first()
+        
+        if not user:
+            # Auto-register user baru
+            user = User(
+                username=email,
+                password=None,  # OAuth user tidak pakai password
+                is_premium=False
+            )
+            db.session.add(user)
+            db.session.commit()
+            flash(f"Akun baru berhasil dibuat untuk {name}!", "success")
+        
+        # Set session (login)
+        session['user_id'] = user.id
+        flash(f"Selamat datang, {name}!", "success")
+        
+        return redirect(url_for('dashboard'))
+        
+    except Exception as e:
+        print(f">>> [OAuth] ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        flash(f"Login gagal: {str(e)}", "error")
+        return redirect(url_for('login'))
 
 @app.before_request
 def track_visit():
@@ -432,62 +467,6 @@ def track_visit():
         db.session.commit()
     except Exception:
         db.session.rollback()
-
-
-@app.route("/login/google/callback")
-def google_callback():
-    """
-    Handle callback dari Google setelah user approve
-    """
-    try:
-        # Ambil access token dari Google
-        token = google.authorize_access_token()
-        user_info = token.get('userinfo')
-        
-        if not user_info:
-            flash("Gagal mendapatkan info user dari Google.", "error")
-            return redirect(url_for('login'))
-        
-        # Debug log
-        import json
-        print(f">>> [OAuth] Google user_info: {json.dumps(user_info, indent=2)}")
-        
-        email = user_info.get('email')
-        name = user_info.get('name', email.split('@')[0] if email else 'User')
-        
-        if not email:
-            flash("Email tidak ditemukan di akun Google.", "error")
-            return redirect(url_for('login'))
-        
-        # Cek apakah user sudah ada
-        user = User.query.filter_by(username=email).first()
-        
-        if not user:
-            # Auto-register user baru
-            print(f">>> [OAuth] Creating new user: {email}")
-            user = User(
-                username=email,
-                password=None,  # OAuth user tidak pakai password
-                is_premium=False
-            )
-            db.session.add(user)
-            db.session.commit()
-            flash(f"Akun baru berhasil dibuat untuk {name}!", "success")
-        else:
-            print(f">>> [OAuth] Existing user logged in: {email}")
-        
-        # Set session (login)
-        session['user_id'] = user.id
-        flash(f"Selamat datang, {name}!", "success")
-        return redirect(url_for('dashboard'))
-    
-    except Exception as e:
-        print(f">>> [OAuth] ERROR: {e}")
-        import traceback
-        traceback.print_exc()
-        flash(f"Login gagal: {str(e)}", "error")
-        return redirect(url_for('login'))
-
 
 @app.route("/logout")
 def logout():
@@ -615,37 +594,37 @@ def payment_success():
 
 @app.route("/generate-invoice", methods=["POST"])
 def generate_invoice():
-    # Pastikan nama route ini '/generate-invoice' sesuai fetch di dashboard.html
+    """Generate invoice dan return HTML untuk print"""
     user_id = session.get("user_id")
     user = User.query.get(user_id) if user_id else Guest()
     
-    # Ambil data dari form (request.form)
+    # Ambil data dari form
     f = request.form
-
+    
     # Hidden inputs dari dashboard.html
     template = f.get("template", "basic")
     bg_color = f.get("bgcolor", "ffffff")
     line_color = f.get("linecolor", "000000")
     header_title = f.get("headertitle", "INVOICE")
-
+    
     # Rapikan value warna (dashboard kirim tanpa '#')
     if bg_color and not bg_color.startswith("#"):
         bg_color = "#" + bg_color
     if line_color and not line_color.startswith("#"):
         line_color = "#" + line_color
-
+    
     # Field customer dari dashboard.html
     customer = (f.get("customername") or "").strip()
-
+    
     # Item fields dari dashboard.html
     names = f.getlist("itemname")
     qtys = f.getlist("itemqty")
     prices = f.getlist("itemprice")
-
+    
     items = []
     grand_total = 0
     max_items = 10
-
+    
     for i in range(min(len(names), len(qtys), len(prices), max_items)):
         name = (names[i] or "").strip()
         try:
@@ -653,19 +632,23 @@ def generate_invoice():
             price = int(prices[i])
         except (ValueError, TypeError):
             continue
-
+        
         if not name or qty <= 0 or price <= 0:
             continue
-
+        
         total = qty * price
         grand_total += total
-        items.append(
-            {"name": name, "qty": qty, "price": price, "total": total}
-        )
-
-    print(">>> [Invoice] customer:", customer)
-    print(">>> [Invoice] items:", items)
-
+        items.append({
+            "name": name,
+            "qty": qty,
+            "price": price,
+            "total": total
+        })
+    
+    # Validasi minimal ada 1 item
+    if not items:
+        return "Error: Minimal harus ada 1 item valid", 400
+    
     return render_template(
         "invoice_print_view.html",
         user=user,

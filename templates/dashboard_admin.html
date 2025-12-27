@@ -12,14 +12,14 @@
   <nav class="bg-white shadow-sm px-6 py-4 flex justify-between items-center sticky top-0 z-50 border-b">
     <div class="flex items-center gap-2">
       <img src="{{ url_for('static', filename='new1invoiceinaja.png') }}" class="h-10 w-auto object-contain" alt="Logo" />
-      <span class="font-bold text-indigo-600 text-lg">Admin Mode</span>
+       <div class="h-8 w-[1px] bg-gray-200"></div>
+      <span class="font-bold text-indigo-600">Admin Mode</span>
     </div>
     <div class="flex items-center gap-4">
       <a href="{{ url_for('dashboard') }}" class="bg-indigo-600 text-white px-5 py-2 rounded-full text-sm hover:bg-indigo-700 font-bold transition shadow-sm">
         <i class="fas fa-arrow-left mr-2"></i> Ke Dashboard User
       </a>
-      <div class="h-8 w-[1px] bg-gray-200"></div>
-      <a href="{{ url_for('logout') }}" class="text-gray-600 hover:text-red-600 font-medium transition flex items-center gap-2">
+           <a href="{{ url_for('logout') }}" class="text-gray-600 hover:text-red-600 font-medium transition flex items-center gap-2">
         <i class="fas fa-sign-out-alt"></i> 
       </a>
     </div>
