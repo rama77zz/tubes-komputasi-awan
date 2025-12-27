@@ -179,66 +179,65 @@ def admin_page():
     if not admin:
         return redirect(url_for("login", next=request.path))
 
-    # =========================
-    # 1) DATA GRAFIK (7 hari)
-    # =========================
-    start = datetime.now() - timedelta(days=7)
-    visit_rows = (
-        db.session.query(
-            func.date(PageVisit.ts).label("d"),
-            func.count(PageVisit.id).label("c"),
-        )
-        .filter(PageVisit.ts >= start)
-        .group_by(func.date(PageVisit.ts))
-        .order_by(func.date(PageVisit.ts))
-        .all()
-    )
+    # 1. LOGIKA GRAFIK PENGUNJUNG (7 Hari Terakhir)
+    start_date = datetime.now() - timedelta(days=7)
+    visit_rows = db.session.query(
+        func.date(PageVisit.ts).label("d"),
+        func.count(PageVisit.id).label("c"),
+    ).filter(PageVisit.ts >= start_date).group_by(func.date(PageVisit.ts)).order_by(func.date(PageVisit.ts)).all()
+    
     labels = [str(r.d) for r in visit_rows]
-    data = [int(r.c) for r in visit_rows]
+    data_visits = [int(r.c) for r in visit_rows]
 
-    # =========================
-    # 2) SORTING USERS (toggle)
-    # =========================
-    sort = request.args.get("sort", "expiry")   # default: urut expiry
-    direction = request.args.get("dir", "asc")  # asc: paling cepat habis di atas
+    # 2. LOGIKA GRAFIK INPUT HARI INI (Per Jam)
+    # Menghitung akses ke route generate-invoice sebagai indikator input
+    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    input_rows = db.session.query(
+        func.hour(PageVisit.ts).label("h"),
+        func.count(PageVisit.id).label("c"),
+    ).filter(PageVisit.ts >= today_start, PageVisit.path == '/generate-invoice')\
+     .group_by(func.hour(PageVisit.ts)).all()
+    
+    input_data = [0] * 24
+    for r in input_rows:
+        input_data[r.h] = r.c
+    input_labels = [f"{i}:00" for i in range(24)]
 
-    FAR_FUTURE = datetime(2999, 1, 1)
-    expiry_key = func.coalesce(User.premium_expiry, FAR_FUTURE)
-
+    # 3. LOGIKA DAFTAR USER & SORTING
+    sort = request.args.get("sort", "expiry")
+    direction = request.args.get("dir", "asc")
+    
     q = User.query
-
-    if sort == "expiry":
-        q = q.order_by(expiry_key.asc() if direction == "asc" else expiry_key.desc())
-    elif sort == "id":
+    if sort == "id":
         q = q.order_by(User.id.asc() if direction == "asc" else User.id.desc())
-    else:
-        q = q.order_by(expiry_key.asc())
-
+    else: # Default sort by expiry
+        q = q.order_by(User.premium_expiry.asc() if direction == "asc" else User.premium_expiry.desc())
+    
     users = q.all()
-
-    # =========================
-    # 3) BUILD ROWS
-    # =========================
     now = datetime.now()
     rows = []
     for u in users:
-        subscribed = bool(u.is_premium and u.premium_expiry and u.premium_expiry > now)
+        is_active = False
+        if u.is_premium and u.premium_expiry and u.premium_expiry > now:
+            is_active = True
+        
         rows.append({
             "id": u.id,
-            "public_id": u.public_id,   # <- tambahkan ini
+            "public_id": u.public_id,
             "username": u.username,
-            "subscribed": subscribed,
-            "premium_expiry": u.premium_expiry,
+            "subscribed": is_active,
+            "premium_expiry": u.premium_expiry.strftime("%Y-%m-%d %H:%M") if u.premium_expiry else "-"
         })
 
     return render_template(
         "dashboard_admin.html",
         admin=admin,
-        user=admin,          # penting kalau template masih pakai user.id / user.username
         labels=labels,
-        data=data,
+        data=data_visits,
+        input_labels=input_labels,
+        input_data=input_data,
         rows=rows,
-        sort=sort,           # dikirim ke template untuk bikin link toggle
+        sort=sort,
         dir=direction
     )
     
@@ -475,29 +474,19 @@ def logout():
 
 @app.route("/dashboard")
 def dashboard():
-    user = None
-
-    if "user_id" in session:
-        try:
-            user = User.query.get(session["user_id"])
-            if user and user.is_premium and user.premium_expiry:
-                if datetime.now() > user.premium_expiry:
-                    user.is_premium = False
-                    user.premium_expiry = None
-                    db.session.commit()
-                    flash("Langganan Premium Berakhir.", "warning")
-        except Exception:
-            pass
-
-    if not user:
+    user_id = session.get("user_id")
+    if user_id:
+        user = User.query.get(user_id)
+        # FIX: Admin mendapatkan privilege premium otomatis
+        if user and user.is_admin:
+            user.is_premium = True 
+    else:
         user = Guest()
 
-    return render_template(
-        "dashboard.html",
-        user=user,
-        client_key=MIDTRANS_CLIENT_KEY,
-    )
-
+    return render_template("dashboard.html", 
+                           user=user, 
+                           admin=user if getattr(user, 'is_admin', False) else None,
+                           client_key=MIDTRANS_CLIENT_KEY)
 
 @app.route("/upload_logo", methods=["POST"])
 def upload_logo():
@@ -554,56 +543,37 @@ def update_address():
     return jsonify({"success": True})
 
 
-# Terima dua URL agar tidak 404 karena beda penamaan endpoint
-@app.route("/getpaymenttoken", methods=["POST"])
-@app.route("/get_payment_token", methods=["POST"])
 def get_payment_token():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Silahkan login terlebih dahulu"}), 401
+    
+    user = User.query.get(user_id)
+    
+    # Inisialisasi Midtrans Snap
+    snap = midtransclient.Snap(
+        is_production=False, # Set True jika sudah live
+        server_key=MIDTRANS_SERVER_KEY
+    )
+
+    order_id = f"PREMIUM-{user.id}-{int(time.time())}"
+    param = {
+        "transaction_details": {
+            "order_id": order_id,
+            "gross_amount": 50000 # Contoh harga Rp 50.000
+        },
+        "customer_details": {
+            "first_name": user.username,
+            "email": f"{user.username}@example.com"
+        },
+        "usage_limit": 1
+    }
+
     try:
-        print(">>> [Payment] get_payment_token dipanggil")
-
-        uid = session.get("user_id") or session.get("userid")
-        print(f">>> [Payment] uid dari session: {uid}")
-
-        if not uid:
-            print(">>> [Payment] ERROR: user belum login")
-            return jsonify({"error": "login_required"}), 401
-
-        user = User.query.get(uid)
-        print(f">>> [Payment] user: {user.username if user else None}")
-
-        if not user:
-            print(">>> [Payment] ERROR: user tidak ditemukan di DB")
-            return jsonify({"error": "user_not_found"}), 401
-
-        order_id = f"SUB-{user.id}-{int(time.time())}"
-        print(f">>> [Payment] order_id: {order_id}")
-
-        # Gunakan email asli kalau user login via Google
-        email = user.username if '@' in user.username else "user@invoiceinaja.com"
-        first_name = user.username.split('@')[0] if '@' in user.username else user.username
-
-        param = {
-            "transaction_details": {
-                "order_id": order_id,
-                "gross_amount": 50000,
-            },
-            "customer_details": {
-                "first_name": first_name,
-                "email": email,
-            },
-        }
-        print(f">>> [Payment] param ke Midtrans: {param}")
-
         transaction = snap.create_transaction(param)
-        print(f">>> [Payment] transaction response: {transaction}")
-
-        return jsonify({"token": transaction["token"]})
+        return jsonify({"token": transaction['token']})
     except Exception as e:
-        import traceback
-        print(f">>> [Payment] ERROR di get_payment_token: {e}")
-        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-
 
 @app.route("/payment_success", methods=["POST"])
 def payment_success():
