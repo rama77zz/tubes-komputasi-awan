@@ -386,10 +386,30 @@ def register():
 
 # --- GOOGLE OAUTH ROUTES ---
 @app.route("/login/google")
-def google_login():
-    redirect_uri = url_for('google_callback', _external=True, _scheme='https')
-    return google.authorize_redirect(redirect_uri)
+def login_google():
+    # Pastikan redirect_uri menggunakan HTTPS jika di Azure
+    redirect_uri = url_for("auth_google", _external=True)
+    if "azurewebsites.net" in redirect_uri:
+        redirect_uri = redirect_uri.replace("http://", "https://")
+    return oauth.google.authorize_redirect(redirect_uri)
 
+@app.route("/auth/google")
+def auth_google():
+    token = oauth.google.authorize_access_token()
+    user_info = token.get('userinfo')
+    if not user_info:
+        flash("Gagal mengambil info user dari Google")
+        return redirect(url_for("login"))
+    
+    # Cari atau buat user berdasarkan email Google
+    user = User.query.filter_by(username=user_info['email']).first()
+    if not user:
+        user = User(username=user_info['email'], public_id=str(uuid.uuid4()))
+        db.session.add(user)
+        db.session.commit()
+    
+    session["user_id"] = user.id
+    return redirect(url_for("dashboard"))
 
 @app.before_request
 def track_visit():
@@ -488,43 +508,39 @@ def dashboard():
                            admin=user if getattr(user, 'is_admin', False) else None,
                            client_key=MIDTRANS_CLIENT_KEY)
 
-@app.route("/upload_logo", methods=["POST"])
+@app.route("/upload-logo", methods=["POST"])
 def upload_logo():
-    if "user_id" not in session:
-        return jsonify({"error": "Login required"}), 401
-
-    user = User.query.get(session["user_id"])
-    if not user or not user.is_premium:
-        return jsonify({"error": "Premium only"}), 403
-
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+    
     file = request.files.get("logo")
     if file:
-        filename = secure_filename(f"logo_{user.id}_{int(time.time())}.png")
-        file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-        user.company_logo = filename
+        filename = secure_filename(f"logo_{user_id}_{file.filename}")
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        
+        user = User.query.get(user_id)
+        user.logo_file = filename
         db.session.commit()
         return jsonify({"success": True, "filename": filename})
+    return jsonify({"error": "No file"}), 400
 
-    return jsonify({"error": "Upload gagal"}), 400
-
-@app.route("/upload_signature", methods=["POST"])
+@app.route("/upload-signature", methods=["POST"])
 def upload_signature():
-    if "user_id" not in session:
-        return jsonify({"error": "Login required"}), 401
-
-    user = User.query.get(session["user_id"])
-    if not user or not user.is_premium:
-        return jsonify({"error": "Premium only"}), 403
-
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+    
     file = request.files.get("signature")
     if file:
-        filename = secure_filename(f"sig_{user.id}_{int(time.time())}.png")
-        file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+        filename = secure_filename(f"sig_{user_id}_{file.filename}")
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        
+        user = User.query.get(user_id)
         user.signature_file = filename
         db.session.commit()
         return jsonify({"success": True, "filename": filename})
-
-    return jsonify({"error": "Upload gagal"}), 400
+    return jsonify({"error": "No file"}), 400
 
 
 @app.route("/update_address", methods=["POST"])
@@ -593,14 +609,13 @@ def payment_success():
     return jsonify({"status": "success"})
 
 
-@app.route("/generate_invoice", methods=["POST"])
+@app.route("/generate-invoice", methods=["POST"])
 def generate_invoice():
-    # ambil user / guest
-    if "user_id" in session:
-        user = User.query.get(session["user_id"])
-    else:
-        user = Guest()
-
+    # Pastikan nama route ini '/generate-invoice' sesuai fetch di dashboard.html
+    user_id = session.get("user_id")
+    user = User.query.get(user_id) if user_id else Guest()
+    
+    # Ambil data dari form (request.form)
     f = request.form
 
     # Hidden inputs dari dashboard.html
