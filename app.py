@@ -173,37 +173,39 @@ def admin_dashboard():
         client_key=MIDTRANS_CLIENT_KEY   # penanda untuk navbar admin (Kembali)
     )
 
-# --- ROUTES ---
 @app.route("/admin")
 def admin_page():
     admin = require_admin_user()
     if not admin:
         return redirect(url_for("login", next=request.path))
-
+    
     # 1. LOGIKA GRAFIK PENGUNJUNG (7 Hari Terakhir)
     start_date = datetime.now() - timedelta(days=7)
     visit_rows = db.session.query(
         func.date(PageVisit.ts).label("d"),
         func.count(PageVisit.id).label("c"),
-    ).filter(PageVisit.ts >= start_date).group_by(func.date(PageVisit.ts)).order_by(func.date(PageVisit.ts)).all()
+    ).filter(PageVisit.ts >= start_date).group_by(
+        func.date(PageVisit.ts)
+    ).order_by(func.date(PageVisit.ts)).all()
     
     labels = [str(r.d) for r in visit_rows]
     data_visits = [int(r.c) for r in visit_rows]
-
+    
     # 2. LOGIKA GRAFIK INPUT HARI INI (Per Jam)
-    # Menghitung akses ke route generate-invoice sebagai indikator input
     today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     input_rows = db.session.query(
         func.hour(PageVisit.ts).label("h"),
         func.count(PageVisit.id).label("c"),
-    ).filter(PageVisit.ts >= today_start, PageVisit.path == '/generate-invoice')\
-     .group_by(func.hour(PageVisit.ts)).all()
+    ).filter(
+        PageVisit.ts >= today_start, 
+        PageVisit.path == '/generate-invoice'
+    ).group_by(func.hour(PageVisit.ts)).all()
     
     input_data = [0] * 24
     for r in input_rows:
         input_data[r.h] = r.c
     input_labels = [f"{i}:00" for i in range(24)]
-
+    
     # 3. LOGIKA DAFTAR USER & SORTING
     sort = request.args.get("sort", "expiry")
     direction = request.args.get("dir", "asc")
@@ -211,27 +213,32 @@ def admin_page():
     q = User.query
     if sort == "id":
         q = q.order_by(User.id.asc() if direction == "asc" else User.id.desc())
-    else: # Default sort by expiry
-        q = q.order_by(User.premium_expiry.asc() if direction == "asc" else User.premium_expiry.desc())
+    else:
+        q = q.order_by(
+            User.premium_expiry.asc() if direction == "asc" 
+            else User.premium_expiry.desc()
+        )
     
     users = q.all()
     now = datetime.now()
     rows = []
+    
     for u in users:
         is_active = False
         if u.is_premium and u.premium_expiry and u.premium_expiry > now:
             is_active = True
-        
         rows.append({
             "id": u.id,
             "public_id": u.public_id,
             "username": u.username,
             "subscribed": is_active,
-            "premium_expiry": u.premium_expiry.strftime("%Y-%m-%d %H:%M") if u.premium_expiry else "-"
+            "premium_expiry": u.premium_expiry.strftime("%Y-%m-%d %H:%M") 
+                              if u.premium_expiry else "-"
         })
-
-     return render_template(
-        "dashboard_admin.html",  
+    
+    # PASTIKAN INDENTASI INI SEJAJAR DENGAN KODE DI ATAS
+    return render_template(
+        "dashboard_admin.html",
         admin=admin,
         labels=labels,
         data=data_visits,
@@ -242,7 +249,6 @@ def admin_page():
         dir=direction
     )
 
-    
 @app.route("/admin/analytics")
 def admin_analytics():
     admin = require_admin_user()
@@ -556,7 +562,7 @@ def update_address():
     db.session.commit()
     return jsonify({"success": True})
 
-
+@app.route("/get-payment-token", methods=["POST"])
 def get_payment_token():
     user_id = session.get("user_id")
     if not user_id:
