@@ -31,17 +31,10 @@
 
   {# ===== MODE ADMIN: hanya tombol kembali + logout ===== #}
   {% if admin and admin.id %}
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-4">
       <a href="{{ url_for('admin_page') }}"
          class="bg-gray-700 text-white px-5 py-2 rounded-full text-sm hover:bg-gray-800 font-bold shadow-sm transition">
-         Kembali ke Panel Admin
-      </a>
-
-      <a href="{{ url_for('logout') }}"
-         class="text-gray-500 hover:text-red-500 ml-2 transition"
-         title="Keluar">
-        <i class="fas fa-sign-out-alt fa-lg"></i>
-      </a>
+        Admin Panel
     </div>
 
   {# ===== MODE USER: navbar lama (punyamu) ===== #}

@@ -16,8 +16,8 @@
       <span class="font-bold text-indigo-600">Admin Mode</span>
     </div>
     <div class="flex items-center gap-4">
-      <a href="{{ url_for('dashboard') }}" class="bg-indigo-600 text-white px-5 py-2 rounded-full text-sm hover:bg-indigo-700 font-bold transition shadow-sm">
-        <i class="fas fa-arrow-left mr-2"></i> Ke Dashboard User
+      <a href="{{ url_for('dashboard') }}" class="bg-indigo-600 text-white px-5 py-2 rounded-full text-sm hover:bg-indigo-700 font-bold shadow-sm transition">
+        <i class="fas fa-arrow-left mr-2"></i>Dashboard
       </a>
            <a href="{{ url_for('logout') }}" class="text-gray-600 hover:text-red-600 font-medium transition flex items-center gap-2">
         <i class="fas fa-sign-out-alt"></i> 
@@ -61,7 +61,7 @@
                   <td class="p-4 font-semibold text-gray-700">{{ r.username }}</td>
                   <td class="p-4">
                     {% if r.subscribed %}
-                      <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold italic">Aktif</span>
+                      <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">Aktif</span>
                     {% else %}
                       <span class="bg-gray-100 text-gray-500 px-3 py-1 rounded-full text-xs font-medium">Free</span>
                     {% endif %}

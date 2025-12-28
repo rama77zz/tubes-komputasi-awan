@@ -141,8 +141,11 @@ class Guest:
         self.username = "Tamu (Guest)"
         self.is_premium = False
         self.company_logo = None
-        self.company_address = None
+        self.company_address = "" # Ubah None jadi string kosong agar tidak error di template
+        self.company_name = ""    # Tambahan
         self.signature_file = None
+        self.signature_name = ""  # Tambahan
+        self.signature_title = "" # Tambahan
         self.is_admin = False
 
 def get_current_user():
@@ -401,7 +404,6 @@ def login_google():
     
     return oauth.google.authorize_redirect(redirect_uri)
 
-
 @app.route("/login/google/callback")
 def google_callback():
     """
@@ -430,11 +432,13 @@ def google_callback():
             # Auto-register user baru
             user = User(
                 username=email,
-                password=None,  # OAuth user tidak pakai password
-                is_premium=False
+                # FIX: Jangan gunakan None. Buat password acak yang aman.
+                password=generate_password_hash(os.urandom(16).hex()),
+                is_premium=False,
+                is_admin=False  # TAMBAHAN: Pastikan default admin adalah False
             )
             db.session.add(user)
-            db.session.commit()
+            db.session.commit()  # PENTING: Commit database sebelum set session!
             flash(f"Akun baru berhasil dibuat untuk {name}!", "success")
         
         # Set session (login)
@@ -444,6 +448,7 @@ def google_callback():
         return redirect(url_for('dashboard'))
         
     except Exception as e:
+        db.session.rollback()  # TAMBAHAN: Rollback jika terjadi error
         print(f">>> [OAuth] ERROR: {e}")
         import traceback
         traceback.print_exc()
