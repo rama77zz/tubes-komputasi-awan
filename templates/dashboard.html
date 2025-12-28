@@ -6,9 +6,10 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
 
+  <!-- FIX: Midtrans Snap Script - Pastikan client_key benar -->
   <script type="text/javascript"
           src="https://app.sandbox.midtrans.com/snap/snap.js"
-          data-client-key="{{ client_key }}"></script>
+          data-client-key="Mid-client-wXRT3UdSUW4t95P6"></script>
 
   <style>
     ::-webkit-scrollbar { width: 8px; }
@@ -31,14 +32,14 @@
 
   {% if admin %}
     <a href="/admin" class="bg-gray-600 text-white px-5 py-2 rounded-full text-sm hover:bg-gray-700 font-bold shadow-sm transition">
-      ← Kembali ke Admin Panel
+      ← Admin Panel
     </a>
   {% else %}
     <div class="flex items-center gap-4">
       <div class="text-right hidden md:block">
         <p class="font-semibold text-sm">{{ user.username }}</p>
         {% if user.is_premium %}
-          <span class="text-xs bg-gradient-to-r from-yellow-400 to-yellow-600 text-white px-2 py-1 rounded-full font-bold">👑 PREMIUM</span>
+          <span class="text-xs text-indigo-600 border-indigo-500 border-2 px-2 py-1 rounded-full font-bold">PREMIUM</span>
         {% else %}
           <span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full font-bold border border-gray-300">MODE TAMU</span>
         {% endif %}
@@ -46,13 +47,15 @@
 
       {% if not user.is_premium %}
         <button onclick="goPremium()"
-                class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-5 py-2 rounded-full shadow hover:shadow-md transition text-sm font-bold flex items-center gap-2 hover:scale-105">
+                class="text-green-600 bg-green-100 px-5 py-2 rounded-full shadow hover:shadow-md transition text-sm font-bold flex items-center gap-2 hover:scale-105">
           <i class="fas fa-crown"></i> UPGRADE
         </button>
       {% endif %}
 
       {% if user.id %}
-        <a href="/logout" class="text-red-500 hover:text-red-700 text-sm font-bold">Logout</a>
+        <a href="/logout" class="text-sm text-grey-500 hover:text-red-500 font-semibold">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
       {% else %}
         <a href="/login" class="bg-indigo-600 text-white px-5 py-2 rounded-full text-sm hover:bg-indigo-700 font-bold ml-2 shadow-sm transition">
           Masuk / Daftar
@@ -361,12 +364,12 @@
     <!-- Footer Buttons -->
     <div class="p-6 pt-0 flex gap-3">
       <button onclick="closePremiumModal()" 
-              class="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition">
-        <i class="fas fa-times"></i> Batal
+              class="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-red-50 transition">
+        <i class="fas"></i> Batal
       </button>
       <button onclick="processPremiumPayment()" 
               class="flex-1 px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg transition transform hover:-translate-y-0.5">
-        <i class="fas fa-credit-card"></i> Bayar Sekarang
+        <i class="fas"></i> Bayar Sekarang
       </button>
     </div>
   </div>

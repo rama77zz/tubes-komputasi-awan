@@ -4,6 +4,12 @@ from datetime import datetime, timedelta
 from sqlalchemy import func
 from werkzeug.security import generate_password_hash, check_password_hash
 
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stdout
+)
+logger = logging.getLogger(__name__)
 
 # Load environment variables untuk development lokal
 from dotenv import load_dotenv
@@ -620,73 +626,107 @@ def payment_success():
 @app.route("/generate-invoice", methods=["POST"])
 def generate_invoice():
     """Generate invoice dan return HTML untuk print"""
-    user_id = session.get("user_id")
-    user = User.query.get(user_id) if user_id else Guest()
+    logger.info("=== START GENERATE INVOICE ===")
     
-    # Ambil data dari form
-    f = request.form
-    
-    # Hidden inputs dari dashboard.html
-    template = f.get("template", "basic")
-    bg_color = f.get("bgcolor", "ffffff")
-    line_color = f.get("linecolor", "000000")
-    header_title = f.get("headertitle", "INVOICE")
-    
-    # Rapikan value warna (dashboard kirim tanpa '#')
-    if bg_color and not bg_color.startswith("#"):
-        bg_color = "#" + bg_color
-    if line_color and not line_color.startswith("#"):
-        line_color = "#" + line_color
-    
-    # Field customer dari dashboard.html
-    customer = (f.get("customername") or "").strip()
-    
-    # Item fields dari dashboard.html
-    names = f.getlist("itemname")
-    qtys = f.getlist("itemqty")
-    prices = f.getlist("itemprice")
-    
-    items = []
-    grand_total = 0
-    max_items = 10
-    
-    for i in range(min(len(names), len(qtys), len(prices), max_items)):
-        name = (names[i] or "").strip()
-        try:
-            qty = int(qtys[i])
-            price = int(prices[i])
-        except (ValueError, TypeError):
-            continue
+    try:
+        user_id = session.get("user_id")
+        logger.info(f"User ID from session: {user_id}")
         
-        if not name or qty <= 0 or price <= 0:
-            continue
+        user = User.query.get(user_id) if user_id else Guest()
+        logger.info(f"User object: {user.username if user else 'None'}")
         
-        total = qty * price
-        grand_total += total
-        items.append({
-            "name": name,
-            "qty": qty,
-            "price": price,
-            "total": total
-        })
-    
-    # Validasi minimal ada 1 item
-    if not items:
-        return "Error: Minimal harus ada 1 item valid", 400
-    
-    return render_template(
-        "invoice_print_view.html",
-        user=user,
-        customer=customer,
-        items=items,
-        grand_total=grand_total,
-        template=template,
-        header_title=header_title,
-        bg_color=bg_color,
-        line_color=line_color,
-        date=datetime.now().strftime("%d %B %Y"),
-    )
-
+        # Ambil data dari form
+        f = request.form
+        logger.info(f"Form keys: {list(f.keys())}")
+        
+        # Log semua form data
+        for key in f.keys():
+            values = f.getlist(key)
+            logger.info(f"Form[{key}] = {values}")
+        
+        # Hidden inputs dari dashboard.html
+        template = f.get("template", "basic")
+        bg_color = f.get("bgcolor", "ffffff")
+        line_color = f.get("linecolor", "000000")
+        header_title = f.get("headertitle", "INVOICE")
+        
+        logger.info(f"Template: {template}, BgColor: {bg_color}, LineColor: {line_color}")
+        
+        # Rapikan value warna
+        if bg_color and not bg_color.startswith("#"):
+            bg_color = "#" + bg_color
+        if line_color and not line_color.startswith("#"):
+            line_color = "#" + line_color
+        
+        # Field customer
+        customer = (f.get("customername") or "").strip()
+        logger.info(f"Customer name: '{customer}'")
+        
+        # Item fields
+        names = f.getlist("itemname")
+        qtys = f.getlist("itemqty")
+        prices = f.getlist("itemprice")
+        
+        logger.info(f"Items count - names:{len(names)}, qtys:{len(qtys)}, prices:{len(prices)}")
+        
+        items = []
+        grand_total = 0
+        max_items = 10
+        
+        for i in range(min(len(names), len(qtys), len(prices), max_items)):
+            name = (names[i] or "").strip()
+            logger.info(f"Processing item {i}: name='{name}', qty='{qtys[i]}', price='{prices[i]}'")
+            
+            try:
+                qty = int(qtys[i])
+                price = int(prices[i])
+            except (ValueError, TypeError) as e:
+                logger.error(f"Error parsing item {i}: {e}")
+                continue
+            
+            if not name or qty <= 0 or price <= 0:
+                logger.warning(f"Skipping invalid item {i}")
+                continue
+            
+            total = qty * price
+            grand_total += total
+            items.append({
+                "name": name,
+                "qty": qty,
+                "price": price,
+                "total": total
+            })
+            logger.info(f"Added item {i}: {name} x{qty} @ Rp{price} = Rp{total}")
+        
+        # Validasi minimal ada 1 item
+        if not items:
+            logger.error("No valid items found!")
+            return "Error: Minimal harus ada 1 item valid", 400
+        
+        logger.info(f"Total items: {len(items)}, Grand total: Rp{grand_total}")
+        logger.info("Attempting to render template...")
+        
+        result = render_template(
+            "invoice_print_view.html",
+            user=user,
+            customer=customer,
+            items=items,
+            grand_total=grand_total,
+            template=template,
+            header_title=header_title,
+            bg_color=bg_color,
+            line_color=line_color,
+            date=datetime.now().strftime("%d %B %Y"),
+        )
+        
+        logger.info("Template rendered successfully!")
+        return result
+        
+    except Exception as e:
+        logger.error(f"EXCEPTION in generate_invoice: {e}", exc_info=True)
+        import traceback
+        traceback.print_exc()
+        return f"Internal Server Error: {str(e)}", 500
 
 if __name__ == "__main__":
     init_db()
