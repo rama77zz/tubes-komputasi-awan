@@ -181,7 +181,7 @@ def admin_page():
     admin = require_admin_user()
     if not admin:
         return redirect(url_for("login", next=request.path))
-    
+
     # 1. LOGIKA GRAFIK PENGUNJUNG (7 Hari Terakhir)
     start_date = datetime.now() - timedelta(days=7)
     visit_rows = db.session.query(
@@ -190,42 +190,49 @@ def admin_page():
     ).filter(PageVisit.ts >= start_date).group_by(
         func.date(PageVisit.ts)
     ).order_by(func.date(PageVisit.ts)).all()
-    
+
     labels = [str(r.d) for r in visit_rows]
     data_visits = [int(r.c) for r in visit_rows]
-    
+    total_visits = sum(data_visits)  # TAMBAHAN: Total pengunjung
+
     # 2. LOGIKA GRAFIK INPUT HARI INI (Per Jam)
     today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     input_rows = db.session.query(
         func.hour(PageVisit.ts).label("h"),
         func.count(PageVisit.id).label("c"),
     ).filter(
-        PageVisit.ts >= today_start, 
+        PageVisit.ts >= today_start,
         PageVisit.path == '/generate-invoice'
     ).group_by(func.hour(PageVisit.ts)).all()
-    
+
     input_data = [0] * 24
     for r in input_rows:
         input_data[r.h] = r.c
     input_labels = [f"{i}:00" for i in range(24)]
-    
-    # 3. LOGIKA DAFTAR USER & SORTING
+    total_inputs = sum(input_data)  # TAMBAHAN: Total input hari ini
+
+    # 3. LOGIKA DAFTAR USER & SORTING + PAGINATION
     sort = request.args.get("sort", "expiry")
     direction = request.args.get("dir", "asc")
-    
+    page = int(request.args.get("page", 1))  # TAMBAHAN: Page number
+    per_page = 8  # TAMBAHAN: 8 user per halaman
+
     q = User.query
+
     if sort == "id":
         q = q.order_by(User.id.asc() if direction == "asc" else User.id.desc())
     else:
         q = q.order_by(
-            User.premium_expiry.asc() if direction == "asc" 
+            User.premium_expiry.asc() if direction == "asc"
             else User.premium_expiry.desc()
         )
+
+    # TAMBAHAN: Pagination
+    pagination = q.paginate(page=page, per_page=per_page, error_out=False)
+    users = pagination.items
     
-    users = q.all()
     now = datetime.now()
     rows = []
-    
     for u in users:
         is_active = False
         if u.is_premium and u.premium_expiry and u.premium_expiry > now:
@@ -235,21 +242,28 @@ def admin_page():
             "public_id": u.public_id,
             "username": u.username,
             "subscribed": is_active,
-            "premium_expiry": u.premium_expiry.strftime("%Y-%m-%d %H:%M") 
-                              if u.premium_expiry else "-"
+            "premium_expiry": u.premium_expiry.strftime("%Y-%m-%d %H:%M")
+            if u.premium_expiry else "-"
         })
-    
-    # PASTIKAN INDENTASI INI SEJAJAR DENGAN KODE DI ATAS
+
     return render_template(
         "dashboard_admin.html",
         admin=admin,
         labels=labels,
         data=data_visits,
+        total_visits=total_visits,  # TAMBAHAN
         input_labels=input_labels,
         input_data=input_data,
+        total_inputs=total_inputs,  # TAMBAHAN
         rows=rows,
         sort=sort,
-        dir=direction
+        dir=direction,
+        # TAMBAHAN: Data pagination
+        page=page,
+        total_pages=pagination.pages,
+        total_users=pagination.total,
+        has_prev=pagination.has_prev,
+        has_next=pagination.has_next
     )
 
 @app.route("/admin/analytics")
@@ -553,10 +567,15 @@ def get_payment_token():
         return jsonify({"error": "Silahkan login terlebih dahulu"}), 401
     
     user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User tidak ditemukan"}), 404
     
-    # Inisialisasi Midtrans Snap
+    # Cek apakah user sudah premium dan belum expired
+    if user.is_premium and user.premium_expiry and user.premium_expiry > datetime.now():
+        return jsonify({"error": "Anda sudah Premium!"}), 403
+    
     snap = midtransclient.Snap(
-        is_production=False, # Set True jika sudah live
+        is_production=False,
         server_key=MIDTRANS_SERVER_KEY
     )
 
@@ -564,7 +583,7 @@ def get_payment_token():
     param = {
         "transaction_details": {
             "order_id": order_id,
-            "gross_amount": 50000 # Contoh harga Rp 50.000
+            "gross_amount": 50000
         },
         "customer_details": {
             "first_name": user.username,
@@ -577,6 +596,7 @@ def get_payment_token():
         transaction = snap.create_transaction(param)
         return jsonify({"token": transaction['token']})
     except Exception as e:
+        print(f"Error creating payment: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route("/payment_success", methods=["POST"])

@@ -1,132 +1,239 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <title>Admin Dashboard - InvoiceInAja</title>
+  <meta charset="UTF-8">
+  <title>Admin Panel - InvoiceInAja</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-gray-50">
 
-  <nav class="bg-white shadow-sm px-6 py-4 flex justify-between items-center sticky top-0 z-50 border-b">
-    <div class="flex items-center gap-2">
-      <img src="{{ url_for('static', filename='new1invoiceinaja.png') }}" class="h-10 w-auto object-contain" alt="Logo" />
-       <div class="h-8 w-[1px] bg-gray-200"></div>
-      <span class="font-bold text-indigo-600">Admin Mode</span>
-    </div>
-    <div class="flex items-center gap-4">
-      <a href="{{ url_for('dashboard') }}" class="bg-indigo-600 text-white px-5 py-2 rounded-full text-sm hover:bg-indigo-700 font-bold shadow-sm transition">
-        <i class="fas fa-arrow-left mr-2"></i>Dashboard
-      </a>
-           <a href="{{ url_for('logout') }}" class="text-gray-600 hover:text-red-600 font-medium transition flex items-center gap-2">
-        <i class="fas fa-sign-out-alt"></i> 
-      </a>
-    </div>
-  </nav>
+<body class="bg-gray-100 font-sans">
 
-  <main class="max-w-[1440px] mx-auto p-6">
-    <div class="grid grid-cols-12 gap-6">
+<!-- Navbar -->
+<nav class="bg-white shadow-sm px-6 py-4 flex justify-between items-center sticky top-0 z-50 border-b">
+  <div class="flex items-center gap-3">
+    <i class="fas fa-user-shield text-indigo-600 text-2xl"></i>
+    <div>
+      <h1 class="font-bold text-lg">Admin Panel</h1>
+      <p class="text-xs text-gray-500">Selamat datang, {{ admin.username }}</p>
+    </div>
+  </div>
+  <div class="flex items-center gap-4">
+    <a href="/admin/dashboard" class="text-sm text-indigo-600 hover:text-indigo-800 font-semibold">
+      <i class="fas fa-file-invoice"></i> Buat Invoice
+    </a>
+    <a href="/logout" class="text-sm text-red-500 hover:text-red-700 font-semibold">
+      <i class="fas fa-sign-out-alt"></i> Logout
+    </a>
+  </div>
+</nav>
+
+<div class="container mx-auto p-6 space-y-6">
+
+  <!-- Grafik Section -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    
+    <!-- Grafik Pengunjung -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+      <h3 class="font-bold text-gray-700 mb-4 flex items-center gap-2">
+        <i class="fas fa-chart-line text-blue-500"></i> Pengunjung (7 Hari Terakhir)
+      </h3>
+      <canvas id="visitChart" class="w-full" style="max-height: 250px;"></canvas>
       
-      <div class="col-span-12 lg:col-span-8">
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <div class="p-6 border-b border-gray-100 flex justify-between items-center">
-            <h2 class="text-xl font-bold text-gray-800">Manajemen User</h2>
-            <span class="text-sm text-gray-500">Total: {{ rows|length }} User</span>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-              <thead class="bg-gray-50 text-gray-600 uppercase text-xs font-bold">
-                <tr>
-                  {% set next_dir_id = 'desc' if (sort == 'id' and dir == 'asc') else 'asc' %}
-                  <th class="p-4 border-b">
-                    <a href="{{ url_for('admin_page', sort='id', dir=next_dir_id) }}" class="flex items-center hover:text-indigo-600">
-                      ID {% if sort == 'id' %}{{ '↑' if dir == 'asc' else '↓' }}{% endif %}
-                    </a>
-                  </th>
-                  <th class="p-4 border-b">Username</th>
-                  <th class="p-4 border-b">Status Premium</th>
-                  {% set next_dir = 'desc' if (sort == 'expiry' and dir == 'asc') else 'asc' %}
-                  <th class="p-4 border-b">
-                    <a href="{{ url_for('admin_page', sort='expiry', dir=next_dir) }}" class="flex items-center hover:text-indigo-600">
-                      Masa Berlaku {% if sort == 'expiry' %}{{ '↑' if dir == 'asc' else '↓' }}{% endif %}
-                    </a>
-                  </th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100">
-                {% for r in rows %}
-                <tr class="hover:bg-gray-50 transition">
-                  <td class="p-4 font-mono text-xs text-gray-500">{{ r.public_id }}</td>
-                  <td class="p-4 font-semibold text-gray-700">{{ r.username }}</td>
-                  <td class="p-4">
-                    {% if r.subscribed %}
-                      <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">Aktif</span>
-                    {% else %}
-                      <span class="bg-gray-100 text-gray-500 px-3 py-1 rounded-full text-xs font-medium">Free</span>
-                    {% endif %}
-                  </td>
-                  <td class="p-4 text-sm text-gray-600">{{ r.premium_expiry }}</td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
+      <!-- Total Pengunjung -->
+      <div class="mt-4 pt-4 border-t border-gray-200 text-center">
+        <p class="text-sm text-gray-500 mb-1">Total Pengunjung</p>
+        <p class="text-3xl font-bold text-blue-600">{{ total_visits }}</p>
       </div>
-
-      <div class="col-span-12 lg:col-span-4 flex flex-col gap-6">
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-          <h2 class="text-lg font-bold text-gray-800 mb-4">Traffic Pengunjung (7 hari)</h2>
-          <canvas id="visitChart" height="200"></canvas>
-        </div>
-
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-          <h2 class="text-lg font-bold text-gray-800 mb-4">Invoice Dibuat (Hari Ini)</h2>
-          <canvas id="inputTodayChart" height="200"></canvas>
-        </div>
-      </div>
-
     </div>
-  </main>
 
-  <script>
-    // Inisialisasi Grafik Pengunjung
-    new Chart(document.getElementById('visitChart'), {
-      type: 'line',
-      data: {
-        labels: {{ labels|tojson }},
-        datasets: [{
-          label: 'Kunjungan',
-          data: {{ data|tojson }},
-          borderColor: '#6366f1',
-          backgroundColor: 'rgba(99, 102, 241, 0.1)',
-          fill: true,
-          tension: 0.4,
-          pointRadius: 4
-        }]
-      },
-      options: { responsive: true, plugins: { legend: { display: false } } }
-    });
+    <!-- Grafik Input Hari Ini -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+      <h3 class="font-bold text-gray-700 mb-4 flex items-center gap-2">
+        <i class="fas fa-clock text-green-500"></i> Input Invoice Hari Ini (Per Jam)
+      </h3>
+      <canvas id="inputChart" class="w-full" style="max-height: 250px;"></canvas>
+      
+      <!-- Total Input -->
+      <div class="mt-4 pt-4 border-t border-gray-200 text-center">
+        <p class="text-sm text-gray-500 mb-1">Total Input Hari Ini</p>
+        <p class="text-3xl font-bold text-green-600">{{ total_inputs }}</p>
+      </div>
+    </div>
 
-    // Inisialisasi Grafik Input Hari Ini
-    new Chart(document.getElementById('inputTodayChart'), {
-      type: 'bar',
-      data: {
-        labels: {{ input_labels|tojson }},
-        datasets: [{
-          label: 'Invoice',
-          data: {{ input_data|tojson }},
-          backgroundColor: '#10b981',
-          borderRadius: 4
-        }]
+  </div>
+
+  <!-- Manajemen User -->
+  <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="font-bold text-gray-700 flex items-center gap-2">
+        <i class="fas fa-users text-indigo-500"></i> Manajemen User
+      </h3>
+      <span class="text-sm text-gray-500">
+        Total: <strong>{{ total_users }}</strong> User | Halaman {{ page }} dari {{ total_pages }}
+      </span>
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-x-auto border rounded-xl">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-gray-600 border-b">
+          <tr>
+            <th class="p-3 text-left">
+              <a href="?sort=id&dir={{ 'desc' if (sort == 'id' and dir == 'asc') else 'asc' }}&page={{ page }}" 
+                 class="hover:text-indigo-600 flex items-center gap-1">
+                ID 
+                {% if sort == 'id' %}
+                  <i class="fas fa-sort-{{ 'up' if dir == 'asc' else 'down' }}"></i>
+                {% endif %}
+              </a>
+            </th>
+            <th class="p-3 text-left">Username</th>
+            <th class="p-3 text-center">Status Premium</th>
+            <th class="p-3 text-center">
+              <a href="?sort=expiry&dir={{ 'desc' if (sort == 'expiry' and dir == 'asc') else 'asc' }}&page={{ page }}" 
+                 class="hover:text-indigo-600 flex items-center gap-1 justify-center">
+                Masa Berlaku 
+                {% if sort == 'expiry' %}
+                  <i class="fas fa-sort-{{ 'up' if dir == 'asc' else 'down' }}"></i>
+                {% endif %}
+              </a>
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for r in rows %}
+          <tr class="hover:bg-gray-50 transition">
+            <td class="p-3 font-mono text-xs text-gray-600">{{ r.public_id }}</td>
+            <td class="p-3 font-semibold">{{ r.username }}</td>
+            <td class="p-3 text-center">
+              {% if r.subscribed %}
+                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">
+                  <i class="fas fa-crown"></i> Aktif
+                </span>
+              {% else %}
+                <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold">
+                  Free
+                </span>
+              {% endif %}
+            </td>
+            <td class="p-3 text-center text-sm">
+              {{ r.premium_expiry }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="mt-4 flex justify-between items-center">
+      <div class="text-sm text-gray-500">
+        Menampilkan {{ rows|length }} dari {{ total_users }} user
+      </div>
+      
+      <div class="flex gap-2">
+        <!-- Previous Button -->
+        {% if has_prev %}
+          <a href="?sort={{ sort }}&dir={{ dir }}&page={{ page - 1 }}" 
+             class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition text-sm font-semibold">
+            <i class="fas fa-chevron-left"></i> Sebelumnya
+          </a>
+        {% else %}
+          <button disabled class="px-4 py-2 bg-gray-100 text-gray-400 border border-gray-200 rounded-lg cursor-not-allowed text-sm font-semibold">
+            <i class="fas fa-chevron-left"></i> Sebelumnya
+          </button>
+        {% endif %}
+
+        <!-- Page Numbers -->
+        <div class="flex gap-1">
+          {% for p in range(1, total_pages + 1) %}
+            {% if p == page %}
+              <span class="px-3 py-2 bg-indigo-600 text-white rounded-lg font-bold text-sm">{{ p }}</span>
+            {% elif p <= 3 or p > total_pages - 3 or (p >= page - 1 and p <= page + 1) %}
+              <a href="?sort={{ sort }}&dir={{ dir }}&page={{ p }}" 
+                 class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-indigo-50 transition text-sm font-semibold">
+                {{ p }}
+              </a>
+            {% elif p == 4 or p == total_pages - 3 %}
+              <span class="px-3 py-2 text-gray-400">...</span>
+            {% endif %}
+          {% endfor %}
+        </div>
+
+        <!-- Next Button -->
+        {% if has_next %}
+          <a href="?sort={{ sort }}&dir={{ dir }}&page={{ page + 1 }}" 
+             class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition text-sm font-semibold">
+            Selanjutnya <i class="fas fa-chevron-right"></i>
+          </a>
+        {% else %}
+          <button disabled class="px-4 py-2 bg-gray-100 text-gray-400 border border-gray-200 rounded-lg cursor-not-allowed text-sm font-semibold">
+            Selanjutnya <i class="fas fa-chevron-right"></i>
+          </button>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  // Grafik Pengunjung
+  const visitCtx = document.getElementById('visitChart').getContext('2d');
+  new Chart(visitCtx, {
+    type: 'line',
+    data: {
+      labels: {{ labels|tojson }},
+      datasets: [{
+        label: 'Pengunjung',
+        data: {{ data|tojson }},
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        tension: 0.3,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
       },
-      options: { 
-        responsive: true, 
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+      scales: {
+        y: { beginAtZero: true }
       }
-    });
-  </script>
+    }
+  });
+
+  // Grafik Input Hari Ini
+  const inputCtx = document.getElementById('inputChart').getContext('2d');
+  new Chart(inputCtx, {
+    type: 'bar',
+    data: {
+      labels: {{ input_labels|tojson }},
+      datasets: [{
+        label: 'Input Invoice',
+        data: {{ input_data|tojson }},
+        backgroundColor: 'rgba(34, 197, 94, 0.7)',
+        borderColor: 'rgb(34, 197, 94)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+</script>
+
 </body>
 </html>
