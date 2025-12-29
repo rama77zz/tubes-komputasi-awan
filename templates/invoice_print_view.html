@@ -1,364 +1,319 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <title>{{ header_title }} - {{ customer_name }}</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-  <style media="print">
-    .no-print { display: none !important; }
-    body { background: white; margin: 0; padding: 0; -webkit-print-color-adjust: exact; }
-    .page { box-shadow: none !important; margin: 0 !important; width: 100% !important; border: none !important; }
-  </style>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice - {{ customer }}</title>
   <style>
-    body { background: #e5e7eb; font-family: Inter, sans-serif; }
-    .page {
-      width: 21cm;
-      min-height: 29.7cm;
-      margin: 2cm auto;
+    @media print {
+      @page { margin: 1cm; }
+      body { margin: 0; }
+      .no-print { display: none !important; }
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+
+    .invoice-container {
+      max-width: 800px;
+      margin: 0 auto;
       background: white;
-      padding: 50px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-      position: relative;
-      box-sizing: border-box;
-      overflow: hidden;
+      padding: 40px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
 
-    .bg-watermark {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) rotate(-15deg);
-      width: 70%;
-      opacity: 0.05;
-      pointer-events: none;
-      z-index: 0;
-      filter: grayscale(100%);
-    }
-
-    /* BASIC */
-    .basic { font-family: "Courier New", Courier, monospace; color: #333; }
-    .basic h1 { text-align: center; border-bottom: 2px dashed #333; padding-bottom: 15px; margin-bottom: 30px; }
-    .basic table { width: 100%; border-collapse: collapse; border: 2px solid #333; margin-top: 20px; }
-    .basic th, .basic td { border: 1px solid #333; padding: 10px; }
-    .basic th { background: #f3f3f3; }
-
-    /* MODERN */
-    .modern { font-family: Inter, sans-serif; color: #111; }
-    .modern .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; }
-    .modern .logo-img { height: 50px; filter: grayscale(100%) contrast(120%); }
-    .modern h1 { font-size: 2.5rem; font-weight: 800; margin: 0; line-height: 1; }
-    .modern table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 20px; }
-    .modern th {
-      text-align: left;
-      padding: 12px 16px;
-      color: #666;
-      text-transform: uppercase;
-      font-size: 0.7rem;
-      font-weight: 700;
-      border-bottom: 2px solid;
-    }
-    .modern tbody tr {
-      background: #fff;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-      border-radius: 8px;
-    }
-    .modern td { padding: 16px; border-top: 1px solid #f0f0f0; border-bottom: 1px solid #f0f0f0; }
-    .modern td:first-child { border-left: 1px solid #f0f0f0; border-top-left-radius: 8px; border-bottom-left-radius: 8px; }
-    .modern td:last-child { border-right: 1px solid #f0f0f0; border-top-right-radius: 8px; border-bottom-right-radius: 8px; text-align: right; }
-    .modern .total-box { background: #111; color: white; padding: 20px 30px; border-radius: 12px; float: right; margin-top: 30px; }
-    .modern .footer {
-      margin-top: 60px;
-      border-top: 1px solid #eee;
-      padding-top: 20px;
+    .invoice-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-end;
-      font-size: 0.8rem;
-      color: #666;
-    }
-    .modern .signature-box { text-align: center; width: 180px; }
-    .modern .sig-img { height: 60px; margin-bottom: 10px; object-fit: contain; }
-    .modern .sig-line { border-top: 1px solid #ccc; margin-top: 5px; }
-
-    /* CORPORATE */
-    .corporate { font-family: "Noto Serif", serif; color: #333; }
-    .corporate .header-bar { height: 6px; width: 100%; margin-bottom: 30px; }
-    .corporate .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 40px;
+      align-items: start;
+      margin-bottom: 30px;
       padding-bottom: 20px;
-      border-bottom: 1px solid #ccc;
+      border-bottom: 3px solid {{ line_color }};
     }
-    .corporate .logo-img { height: 60px; margin-bottom: 10px; filter: grayscale(100%); }
-    .corporate .company-name {
-      font-size: 1.4rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #111;
-      margin: 0;
-    }
-    .corporate .invoice-title {
-      font-size: 2.2rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      margin: 0;
-      letter-spacing: 3px;
+
+    .company-info { flex: 1; }
+    .company-logo { max-width: 120px; max-height: 80px; margin-bottom: 10px; }
+    .company-name { font-size: 24px; font-weight: bold; color: #333; margin-bottom: 5px; }
+    .company-address { font-size: 12px; color: #666; line-height: 1.6; max-width: 300px; }
+
+    .invoice-title {
       text-align: right;
+      flex-shrink: 0;
     }
-    .corporate .invoice-details { text-align: right; margin-top: 10px; font-family: Inter, sans-serif; font-size: 0.9rem; }
-    .corporate .invoice-details p { margin: 2px 0; }
-    .corporate .bill-to { margin-bottom: 30px; font-family: Inter, sans-serif; }
-    .corporate .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #666; font-weight: bold; margin-bottom: 5px; }
-    .corporate .customer-name { font-size: 1.4rem; font-weight: 700; color: #000; font-family: "Noto Serif", serif; }
-    .corporate table { width: 100%; margin-top: 10px; border-collapse: collapse; font-family: Inter, sans-serif; }
-    .corporate th {
-      text-align: left;
-      padding: 12px 5px;
-      font-weight: 700;
+
+    .invoice-title h1 {
+      font-size: 32px;
+      font-weight: bold;
+      color: {{ line_color }};
+      margin-bottom: 5px;
+    }
+
+    .invoice-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      gap: 20px;
+    }
+
+    .invoice-to, .invoice-details {
+      flex: 1;
+    }
+
+    .invoice-to h3, .invoice-details h3 {
+      font-size: 12px;
+      font-weight: bold;
+      color: #999;
       text-transform: uppercase;
-      font-size: 0.75rem;
-      border-bottom: 2px solid #000;
-      color: #000;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+
+    .invoice-to p, .invoice-details p {
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 4px;
+    }
+
+    .invoice-items {
+      margin: 30px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead {
+      background: {{ line_color }};
+      color: white;
+    }
+
+    th {
+      padding: 12px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
       letter-spacing: 0.5px;
     }
-    .corporate th:last-child { text-align: right; }
-    .corporate td { padding: 12px 5px; border-bottom: 1px solid #eee; font-size: 0.95rem; color: #444; }
-    .corporate td:last-child { text-align: right; font-weight: 600; color: #000; }
-    .corporate .total-section { margin-top: 20px; margin-left: auto; width: 40%; font-family: Inter, sans-serif; }
-    .corporate .grand-total-row {
+
+    th.text-right, td.text-right { text-align: right; }
+    th.text-center, td.text-center { text-align: center; }
+
+    tbody tr {
+      border-bottom: 1px solid #eee;
+    }
+
+    tbody tr:hover {
+      background: #f9f9f9;
+    }
+
+    td {
+      padding: 12px;
+      font-size: 14px;
+      color: #333;
+    }
+
+    .total-section {
+      margin-top: 30px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .total-box {
+      width: 300px;
+      background: {{ bg_color }};
+      padding: 20px;
+      border-radius: 8px;
+    }
+
+    .total-row {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      padding-top: 15px;
-      border-top: 2px solid #000;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    .total-row.grand {
+      border-top: 2px solid {{ line_color }};
+      padding-top: 10px;
       margin-top: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      color: {{ line_color }};
     }
-    .corporate .total-label { font-size: 1rem; font-weight: bold; text-transform: uppercase; }
-    .corporate .total-value { font-size: 1.8rem; font-weight: 800; color: #000; }
-    .corporate .footer {
-      margin-top: 80px;
+
+    .signature-section {
+      margin-top: 60px;
       display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      font-family: Inter, sans-serif;
+      justify-content: flex-end;
     }
-    .corporate .address-box { width: 50%; font-size: 0.85rem; line-height: 1.6; color: #555; text-align: left; }
-    .corporate .address-title { font-weight: bold; text-transform: uppercase; margin-bottom: 5px; font-size: 0.75rem; color: #000; }
-    .corporate .signature-box { text-align: center; width: 220px; }
-    .corporate .sig-title { font-size: 0.8rem; margin-bottom: 50px; font-weight: 600; }
-    .corporate .sig-img { height: 70px; margin-bottom: -10px; display: block; margin-left: auto; margin-right: auto; }
-    .corporate .sig-line { border-top: 1px solid #000; padding-top: 5px; font-weight: bold; text-transform: uppercase; font-size: 0.9rem; margin-top: 5px; }
+
+    .signature-box {
+      text-align: center;
+      width: 200px;
+    }
+
+    .signature-label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 40px;
+    }
+
+    .signature-img {
+      max-width: 150px;
+      max-height: 60px;
+      margin: 0 auto 10px;
+    }
+
+    .signature-name {
+      font-weight: bold;
+      font-size: 14px;
+      color: #333;
+      border-top: 1px solid #333;
+      padding-top: 5px;
+      display: inline-block;
+      min-width: 150px;
+    }
+
+    .signature-title {
+      font-size: 12px;
+      color: #666;
+      margin-top: 3px;
+    }
+
+    .print-button {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: {{ line_color }};
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+    }
+
+    .print-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+
+    @media print {
+      .invoice-container {
+        box-shadow: none;
+        padding: 20px;
+      }
+    }
   </style>
 </head>
-
 <body>
-  <div class="page {{ template }}" style="background-color: {% if template != 'basic' %}#{{ bg_color }}{% else %}#fff{% endif %};">
 
-    {% if template != 'basic' and user.company_logo %}
-      <img src="{{ url_for('static', filename='uploads/' ~ user.company_logo) }}" class="bg-watermark" />
-    {% endif %}
-
-    <div style="position: relative; z-index: 10;">
-
-      {% if template == 'modern' %}
-
-        <div class="header">
-          <div>
-            {% if user.company_logo %}
-              <img src="{{ url_for('static', filename='uploads/' ~ user.company_logo) }}" class="logo-img" />
-            {% else %}
-              <h2 class="text-2xl font-black uppercase">
-                {{ user.company_name | default(user.username ~ ' CORP.', true) }}
-              </h2>
-            {% endif %}
-          </div>
-
-          <div style="text-align:right;">
-            <h1>{{ header_title }}</h1>
-            <p class="opacity-80 mt-1">#{{ range(100000, 999999) | random }}</p>
-          </div>
-        </div>
-
-        <div class="mb-6">
-          <div class="text-sm opacity-80">Kepada Yth.</div>
-          <div class="text-xl font-bold">{{ customer_name }}</div>
-        </div>
-
-        <table>
-          <thead>
-            <tr style="border-color: #{{ line_color }};">
-              <th style="border-color:#{{ line_color }};">Deskripsi</th>
-              <th style="border-color:#{{ line_color }};">Qty</th>
-              <th style="border-color:#{{ line_color }}; text-align:right;">Harga</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for it in items %}
-              <tr>
-                <td>{{ it.name }}</td>
-                <td>{{ it.qty }}</td>
-                <td style="text-align:right;">Rp {{ "{:,.0f}".format(it.price) }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-
-        <div class="total-box">
-          <div class="text-xs opacity-80">Total</div>
-          <div class="text-2xl font-extrabold">Rp {{ "{:,.0f}".format(total) }}</div>
-        </div>
-
-        <div style="clear:both;"></div>
-
-        <div class="footer">
-          <div style="max-width: 55%;">
-            {% if user.company_address %}
-              <div class="text-xs font-semibold uppercase tracking-wider mb-1">Alamat</div>
-              <div class="text-sm whitespace-pre-line">{{ user.company_address }}</div>
-            {% endif %}
-          </div>
-
-          <div class="signature-box">
-            {% if user.signature_title %}
-              <div class="text-xs font-semibold uppercase tracking-wider mb-2">
-                {{ user.signature_title | default('Authorized Signature', true) }}
-              </div>
-            {% else %}
-              <div class="text-xs font-semibold uppercase tracking-wider mb-2">Authorized Signature</div>
-            {% endif %}
-
-            {% if user.signature_file %}
-              <img class="sig-img" src="{{ url_for('static', filename='uploads/' ~ user.signature_file) }}">
-            {% endif %}
-
-            <div class="sig-line"></div>
-            <div class="font-semibold mt-1">
-              {{ user.signature_name | default(user.username, true) }}
-            </div>
-          </div>
-        </div>
-
-      {% elif template == 'corporate' %}
-
-        <div class="header-bar" style="background-color:#{{ line_color }};"></div>
-
-        <div class="header">
-          <div>
-            {% if user.company_logo %}
-              <img src="{{ url_for('static', filename='uploads/' ~ user.company_logo) }}" class="logo-img" />
-            {% endif %}
-            <p class="company-name">
-              {{ user.company_name | default(user.username ~ ' CORP.', true) }}
-            </p>
-          </div>
-
-          <div>
-            <p class="invoice-title">{{ header_title }}</p>
-            <div class="invoice-details">
-              <p><span class="opacity-70">No:</span> #{{ range(100000, 999999) | random }}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="bill-to">
-          <div class="label">Kepada Yth.</div>
-          <div class="customer-name">{{ customer_name }}</div>
-        </div>
-
-        <table>
-          <thead>
-            <tr>
-              <th>Deskripsi</th>
-              <th>Qty</th>
-              <th style="text-align:right;">Harga</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for it in items %}
-              <tr>
-                <td>{{ it.name }}</td>
-                <td>{{ it.qty }}</td>
-                <td style="text-align:right;">Rp {{ "{:,.0f}".format(it.price) }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-
-        <div class="total-section">
-          <div class="grand-total-row">
-            <div class="total-label">Total</div>
-            <div class="total-value">Rp {{ "{:,.0f}".format(total) }}</div>
-          </div>
-        </div>
-
-        <div class="footer">
-          <div class="address-box">
-            {% if user.company_address %}
-              <div class="address-title">Alamat</div>
-              <div class="whitespace-pre-line">{{ user.company_address }}</div>
-            {% endif %}
-          </div>
-
-          <div class="signature-box">
-            <div class="sig-title">
-              {{ user.signature_title | default('Direktur Keuangan', true) }}
-            </div>
-
-            {% if user.signature_file %}
-              <img class="sig-img" src="{{ url_for('static', filename='uploads/' ~ user.signature_file) }}">
-            {% endif %}
-
-            <div class="sig-line">
-              {{ user.signature_name | default(user.username, true) }}
-            </div>
-          </div>
-        </div>
-
-      {% else %}
-
-        <!-- BASIC -->
-        <h1>{{ header_title }}</h1>
-        <p><strong>Kepada:</strong> {{ customer_name }}</p>
-
-        <table>
-          <thead>
-            <tr>
-              <th>Deskripsi</th>
-              <th>Qty</th>
-              <th>Harga</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for it in items %}
-              <tr>
-                <td>{{ it.name }}</td>
-                <td>{{ it.qty }}</td>
-                <td>Rp {{ "{:,.0f}".format(it.price) }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-
-        <p style="margin-top:20px;"><strong>Total:</strong> Rp {{ "{:,.0f}".format(total) }}</p>
-
+<div class="invoice-container">
+  <!-- Header -->
+  <div class="invoice-header">
+    <div class="company-info">
+      {% if user.company_logo %}
+        <img src="/static/uploads/{{ user.company_logo }}" alt="Logo" class="company-logo">
       {% endif %}
 
-      <div class="no-print mt-8">
-        <button onclick="window.print()"
-                class="px-4 py-2 rounded bg-black text-white">
-          Print / Save PDF
-        </button>
+      <div class="company-name">
+        {{ user.company_name or user.username }}
       </div>
 
+      {% if user.company_address %}
+        <div class="company-address">{{ user.company_address }}</div>
+      {% endif %}
+    </div>
+
+    <div class="invoice-title">
+      <h1>{{ header_title }}</h1>
+      <p style="font-size: 14px; color: #666;">#{{ range(100000, 999999) | random }}</p>
     </div>
   </div>
+
+  <!-- Invoice Meta -->
+  <div class="invoice-meta">
+    <div class="invoice-to">
+      <h3>Kepada</h3>
+      <p><strong>{{ customer }}</strong></p>
+    </div>
+
+    <div class="invoice-details">
+      <h3>Detail Invoice</h3>
+      <p><strong>Tanggal:</strong> {{ date }}</p>
+    </div>
+  </div>
+
+  <!-- Items Table -->
+  <div class="invoice-items">
+    <table>
+      <thead>
+        <tr>
+          <th>Deskripsi</th>
+          <th class="text-center">Qty</th>
+          <th class="text-right">Harga</th>
+          <th class="text-right">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for it in items %}
+        <tr>
+          <td>{{ it.name }}</td>
+          <td class="text-center">{{ it.qty }}</td>
+          <td class="text-right">Rp {{ "{:,.0f}".format(it.price) }}</td>
+          <td class="text-right">Rp {{ "{:,.0f}".format(it.total) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Total Section -->
+  <div class="total-section">
+    <div class="total-box">
+      <div class="total-row grand">
+        <span>TOTAL</span>
+        <span>Rp {{ "{:,.0f}".format(grand_total) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Signature Section -->
+  {% if user.is_premium %}
+  <div class="signature-section">
+    <div class="signature-box">
+      <div class="signature-label">Disetujui oleh,</div>
+
+      {% if user.signature_file %}
+        <img src="/static/uploads/{{ user.signature_file }}" alt="Signature" class="signature-img">
+      {% endif %}
+
+      <div class="signature-name">
+        {{ user.signature_name or user.username }}
+      </div>
+
+      {% if user.signature_title %}
+        <div class="signature-title">{{ user.signature_title }}</div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Print Button -->
+<button onclick="window.print()" class="print-button no-print">
+  🖨️ Cetak Invoice
+</button>
+
 </body>
 </html>
