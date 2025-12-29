@@ -507,10 +507,10 @@ function closePremiumModal() {
   document.getElementById("premiumModal").classList.add("hidden");
 }
 
-// CRITICAL FIX: Process payment with Midtrans Snap
+// Function untuk proses pembayaran setelah konfirmasi
 function processPremiumPayment() {
   console.log("=== PROCESS PAYMENT CLICKED ===");
-
+  
   if (!window.paymentToken) {
     alert("Token pembayaran tidak valid. Silakan coba lagi.");
     closePremiumModal();
@@ -519,7 +519,7 @@ function processPremiumPayment() {
 
   console.log("Payment token:", window.paymentToken);
 
-  // CRITICAL: Validasi Snap loaded
+  // PENTING: Validasi Snap loaded
   if (typeof window.snap === 'undefined') {
     console.error("ERROR: Snap.js not loaded!");
     alert("❌ Payment gateway belum siap. Refresh halaman (F5) dan coba lagi.");
@@ -535,7 +535,7 @@ function processPremiumPayment() {
   // Proses pembayaran via Midtrans Snap
   try {
     console.log("Calling snap.pay()...");
-
+    
     window.snap.pay(window.paymentToken, {
       onSuccess: async function (result) {
         console.log("✅ Payment success:", result);
@@ -545,7 +545,7 @@ function processPremiumPayment() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ order_id: result.order_id })
           });
-
+          
           if (res.ok) {
             alert("✅ Upgrade Berhasil! Selamat menikmati fitur Premium.");
             location.reload();
@@ -559,27 +559,28 @@ function processPremiumPayment() {
           location.reload();
         }
       },
-
+      
       onPending: function (result) {
         console.log("⏳ Payment pending:", result);
         alert("⏳ Pembayaran sedang diproses. Cek email/notifikasi Anda.");
       },
-
+      
       onError: function (result) {
         console.error("❌ Payment error:", result);
         alert("❌ Pembayaran gagal: " + (result.status_message || "Silakan coba lagi"));
       },
-
+      
       onClose: function () {
         console.log("Payment popup closed by user");
       }
     });
-
+    
   } catch (e) {
     console.error("EXCEPTION calling snap.pay:", e);
     alert("❌ Gagal membuka payment gateway: " + e.message);
   }
 }
+
 </script>
 
 </body>
