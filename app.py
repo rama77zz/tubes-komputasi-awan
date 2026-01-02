@@ -6,6 +6,8 @@ import time
 from datetime import datetime, timedelta
 from sqlalchemy import func
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix  # [PENTING] Untuk HTTPS di Azure
+from werkzeug.utils import secure_filename
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -16,14 +18,14 @@ from flask import (
 )
 
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.utils import secure_filename
 import midtransclient
 import pymysql
-
 from authlib.integrations.flask_client import OAuth
 
+# Install MySQL driver
 pymysql.install_as_MySQLdb()
 
+# Konfigurasi Logging
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -32,9 +34,16 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# [FIX] Middleware ProxyFix
+# Ini membuat Flask "sadar" bahwa dia berjalan di belakang HTTPS (Azure)
+# Mengatasi masalah redirect URI mismatch pada Google OAuth
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
 app.secret_key = "rahasia_lokal_123"
 basedir = os.path.abspath(os.path.dirname(__file__))
 
+# --- KONFIGURASI DATABASE ---
 AZURE_DB_HOST = "praktikum-crudtaufiq2311.mysql.database.azure.com"
 AZURE_DB_USER = "adminlogintest"
 AZURE_DB_PASS = "mpVYe8mXt8h2wdi"
@@ -47,20 +56,20 @@ database_uri = (
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_uri
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
 app.config["UPLOAD_FOLDER"] = os.path.join(basedir, "static", "uploads")
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 db = SQLAlchemy(app)
 
+# --- KONFIGURASI MIDTRANS ---
 MIDTRANS_SERVER_KEY = "Mid-server-JEHBUtBFFwcJ8Sw8GypuXrQZ"
 MIDTRANS_CLIENT_KEY = "Mid-client-wXRT3UdSUW4t95P6"
 
+# --- KONFIGURASI GOOGLE OAUTH ---
 app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID', '')
 app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET', '')
 
 oauth = OAuth(app)
-
 google = oauth.register(
     name='google',
     server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
@@ -72,6 +81,7 @@ google = oauth.register(
     }
 )
 
+# --- MODELS ---
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
@@ -82,6 +92,8 @@ class User(db.Model):
     company_logo = db.Column(db.String(200), nullable=True)
     company_address = db.Column(db.String(500), nullable=True)
     signature_file = db.Column(db.String(200), nullable=True)
+    
+    # Field Tambahan untuk Profil Invoice
     company_name = db.Column(db.String(120), nullable=True)
     signature_name = db.Column(db.String(120), nullable=True)
     signature_title = db.Column(db.String(120), nullable=True)
@@ -92,7 +104,7 @@ class User(db.Model):
 
 class PageVisit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    ts = db.Column(db.DateTime, default=datetime.now, index=True)
+    ts = db.Column(db.DateTime, default=datetime.utcnow, index=True) # Selalu simpan dalam UTC
     path = db.Column(db.String(255), nullable=False)
     user_id = db.Column(db.Integer, nullable=True)
 
@@ -100,93 +112,94 @@ def init_db():
     with app.app_context():
         try:
             db.create_all()
-            print(">>> SUKSES: Tabel Database Siap.")
-            try:
-                if not User.query.filter_by(username="user_demo").first():
-                    db.session.add(
-                        User(
-                            username="user_demo",
-                            password=generate_password_hash("123"),
-                            is_premium=False,
-                            is_admin=False,
-                        )
-                    )
-                    db.session.commit()
-                    print(">>> User Demo 'user_demo' berhasil dibuat.")
-            except Exception:
-                db.session.rollback()
+            print(">>> DATABASE SUKSES DIINISIALISASI.")
         except Exception as e:
-            print(f">>> ERROR DATABASE: {e}")
+            print(f">>> DB ERROR: {e}")
 
+# Class Helper untuk User Tamu
 class Guest:
     def __init__(self):
         self.id = None
         self.username = "Tamu (Guest)"
         self.is_premium = False
+        self.is_admin = False
         self.company_logo = None
         self.company_address = ""
-        self.company_name = ""
+        self.company_name = None
         self.signature_file = None
-        self.signature_name = ""
-        self.signature_title = ""
-        self.is_admin = False
+        self.signature_name = None
+        self.signature_title = None
 
+# --- UTILITY ---
 def get_current_user():
     uid = session.get("user_id")
-    if not uid:
-        return None
+    if not uid: return None
     return User.query.get(uid)
 
-def require_admin_user():
-    u = get_current_user()
-    if not u or not getattr(u, "is_admin", False):
-        return None
-    return u
+# --- ROUTES ---
 
-# [FIX] Redirect /admin/dashboard ke /admin agar tidak salah tampilan
-@app.route("/admin/dashboard")
-def admin_dashboard_redirect():
-    return redirect(url_for("admin_page"))
+@app.route("/")
+def index():
+    return redirect(url_for("dashboard"))
 
-# [FIX] Endpoint Admin Utama - Menggunakan dashboard_admin.html
 @app.route("/admin")
 def admin_page():
-    # 1. Cek User Admin
-    admin = require_admin_user()
-    if not admin:
-        return redirect(url_for("login", next=request.path))
+    # 1. Cek Admin
+    user_id = session.get("user_id")
+    if not user_id: return redirect(url_for("login"))
+    
+    user = User.query.get(user_id)
+    if not user or not user.is_admin:
+        return redirect(url_for("dashboard"))
 
-    # 2. Hitung Grafik Pengunjung (7 Hari Terakhir)
-    start_date = datetime.now() - timedelta(days=7)
+    # --- [FIX] LOGIKA TIMEZONE UNTUK GRAFIK ---
+    
+    # A. Grafik Pengunjung (7 Hari Terakhir)
+    now_utc = datetime.utcnow()
+    start_date = now_utc - timedelta(days=7)
+    
     visit_rows = db.session.query(
         func.date(PageVisit.ts).label("d"),
         func.count(PageVisit.id).label("c"),
-    ).filter(PageVisit.ts >= start_date).group_by(
-        func.date(PageVisit.ts)
-    ).order_by(func.date(PageVisit.ts)).all()
+    ).filter(PageVisit.ts >= start_date).group_by(func.date(PageVisit.ts)).all()
 
     labels = [str(r.d) for r in visit_rows]
     data_visits = [int(r.c) for r in visit_rows]
     total_visits = sum(data_visits)
 
-    # 3. Hitung Grafik Input Invoice (HARI INI per Jam)
-    # Ini sekarang akan berfungsi karena kita sudah perbaiki 'generate_invoice' di atas
-    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    input_rows = db.session.query(
-        func.hour(PageVisit.ts).label("h"),
-        func.count(PageVisit.id).label("c"),
-    ).filter(
-        PageVisit.ts >= today_start,
-        PageVisit.path == '/generate-invoice'  # Membaca log yang kita buat manual tadi
-    ).group_by(func.hour(PageVisit.ts)).all()
+    # B. Grafik Input Invoice (HARI INI - WIB)
+    # Server Azure pakai UTC. Kita perlu geser waktu agar sesuai "Hari Ini" di Indonesia (WIB)
+    
+    # Hitung jam sekarang di WIB
+    now_wib = now_utc + timedelta(hours=7)
+    
+    # Tentukan awal hari ini dalam WIB (Jam 00:00:00 WIB)
+    today_wib_start = now_wib.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # Konversi balik ke UTC untuk query database
+    query_start_utc = today_wib_start - timedelta(hours=7)
 
+    # Ambil semua log input invoice sejak jam 00:00 WIB tadi
+    input_rows = db.session.query(PageVisit.ts).filter(
+        PageVisit.ts >= query_start_utc,
+        PageVisit.path == '/generate-invoice'
+    ).all()
+
+    # Siapkan array 24 jam
     input_data = [0] * 24
+    
     for r in input_rows:
-        input_data[r.h] = r.c
-    input_labels = [f"{i}:00" for i in range(24)]
+        # Timestamp dari DB adalah UTC. Kita ubah ke WIB (+7 jam)
+        log_time_wib = r.ts + timedelta(hours=7)
+        hour_index = log_time_wib.hour
+        # Masukkan ke bucket jam yang sesuai
+        if 0 <= hour_index < 24:
+            input_data[hour_index] += 1
+
+    input_labels = [f"{i:02d}:00" for i in range(24)]
     total_inputs = sum(input_data)
 
-    # 4. Logika Pagination & Tabel User
+    # C. Tabel User (Pagination)
     sort = request.args.get("sort", "expiry")
     direction = request.args.get("dir", "asc")
     page = int(request.args.get("page", 1))
@@ -195,110 +208,220 @@ def admin_page():
     q = User.query
     if sort == "id":
         q = q.order_by(User.id.asc() if direction == "asc" else User.id.desc())
-    else: # sort by expiry
-        q = q.order_by(
-            User.premium_expiry.asc() if direction == "asc"
-            else User.premium_expiry.desc()
-        )
+    else: 
+        q = q.order_by(User.premium_expiry.asc() if direction == "asc" else User.premium_expiry.desc())
 
     pagination = q.paginate(page=page, per_page=per_page, error_out=False)
-    users = pagination.items
     
-    now = datetime.now()
-    rows = []
-    for u in users:
+    row_data = []
+    for u in pagination.items:
         is_active = False
-        if u.is_premium and u.premium_expiry and u.premium_expiry > now:
+        if u.is_premium and u.premium_expiry and u.premium_expiry > datetime.now():
             is_active = True
-        rows.append({
+            
+        row_data.append({
             "id": u.id,
             "public_id": u.public_id,
             "username": u.username,
             "subscribed": is_active,
-            "premium_expiry": u.premium_expiry.strftime("%Y-%m-%d %H:%M")
-            if u.premium_expiry else "-"
+            "premium_expiry": u.premium_expiry.strftime("%Y-%m-%d") if u.premium_expiry else "-"
         })
 
-    # 5. Render Template Admin yang BENAR
     return render_template(
-        "dashboard_admin.html",  # Pastikan file HTML Anda bernama ini
-        admin=admin,
+        "dashboard_admin.html",
+        admin=user,
         labels=labels,
         data=data_visits,
         total_visits=total_visits,
         input_labels=input_labels,
         input_data=input_data,
         total_inputs=total_inputs,
-        rows=rows,
-        sort=sort,
-        dir=direction,
-        page=page,
+        rows=row_data,
+        sort=sort, dir=direction, page=page,
         total_pages=pagination.pages,
         total_users=pagination.total,
-        has_prev=pagination.has_prev,
-        has_next=pagination.has_next
+        has_prev=pagination.has_prev, has_next=pagination.has_next
     )
 
-@app.route("/premium/profile", methods=["POST"])
-def premium_profile():
-    if "user_id" not in session:
-        return jsonify(error="Login required"), 401
+@app.route("/get-payment-token", methods=["POST"])
+def get_payment_token():
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"error": "Silahkan login terlebih dahulu"}), 401
+
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User tidak ditemukan"}), 404
+
+    if user.is_premium and user.premium_expiry and user.premium_expiry > datetime.now():
+        return jsonify({"error": "Anda sudah Premium!"}), 403
+
+    # --- [FIX] LOGIKA VALIDASI NAMA/EMAIL UNTUK MIDTRANS ---
+    # Midtrans menolak jika nama mengandung spasi/simbol aneh atau email tidak valid formatnya
+    
+    customer_email = ""
+    customer_name = ""
+
+    if "@" in user.username:
+        # Kasus 1: Login via Google (Username adalah Email)
+        customer_email = user.username.strip()
+        
+        # Ambil bagian depan email sebagai nama (sebelum @)
+        raw_name = user.username.split("@")[0]
+        
+        # Bersihkan nama: hanya ambil huruf dan angka (Midtrans strict)
+        customer_name = ''.join(e for e in raw_name if e.isalnum())
+        
+        # Fallback jika nama jadi kosong setelah dibersihkan
+        if len(customer_name) < 2:
+            customer_name = "UserGoogle"
+    else:
+        # Kasus 2: Login Biasa (Username bukan email)
+        customer_name = ''.join(e for e in user.username if e.isalnum())
+        if not customer_name: customer_name = "UserApps"
+        
+        # Buat dummy email valid
+        customer_email = f"{customer_name}@example.com"
+
+    # Inisialisasi Snap
+    snap = midtransclient.Snap(
+        is_production=False,
+        server_key=MIDTRANS_SERVER_KEY
+    )
+
+    # Order ID unik
+    order_id = f"PREM-{user.id}-{int(time.time())}"
+
+    param = {
+        "transaction_details": {
+            "order_id": order_id,
+            "gross_amount": 50000
+        },
+        "customer_details": {
+            "first_name": customer_name,
+            "email": customer_email
+        },
+        "credit_card": {
+            "secure": True
+        }
+    }
+
+    try:
+        transaction = snap.create_transaction(param)
+        return jsonify({"token": transaction['token']})
+    except Exception as e:
+        logger.error(f"Midtrans Payment Error for {user.username}: {e}")
+        return jsonify({"error": "Gagal inisialisasi pembayaran. Cek koneksi server."}), 500
+
+@app.route("/payment-success", methods=["POST"])
+def payment_success():
+    if "user_id" not in session: return jsonify({"error": "Unauthorized"}), 401
 
     user = User.query.get(session["user_id"])
-    if not user or not user.is_premium:
-        return jsonify(error="Premium only"), 403
+    if user:
+        user.is_premium = True
+        # Tambah 30 hari premium
+        user.premium_expiry = datetime.now() + timedelta(days=30)
+        db.session.commit()
+        return jsonify({"status": "success"})
+    
+    return jsonify({"error": "User not found"}), 404
 
-    payload = request.get_json(silent=True) or {}
+@app.route("/generate-invoice", methods=["POST"])
+def generate_invoice():
+    # --- [FIX] PENCATATAN LOG MANUAL UNTUK GRAFIK ---
+    # Log aktivitas ini secara manual agar masuk ke Database PageVisit
+    try:
+        if "user_id" in session:
+            # Gunakan path yang persis sama dengan filter di admin
+            v = PageVisit(path='/generate-invoice', user_id=session["user_id"])
+            db.session.add(v)
+            db.session.commit()
+    except Exception as e:
+        # Jangan sampai error logging menghentikan user membuat invoice
+        logger.error(f"Failed logging visit: {e}")
+        db.session.rollback()
 
-    def clean(key, maxlen):
-        v = (payload.get(key) or "").strip()
-        if not v:
-            return None
-        return v[:maxlen]
+    # --- PROSES PEMBUATAN INVOICE ---
+    try:
+        user_id = session.get("user_id")
+        user = User.query.get(user_id) if user_id else Guest()
+        
+        f = request.form
+        template = f.get("template", "basic")
+        
+        # Bersihkan kode warna (hapus # jika ada)
+        bg_color = "#" + f.get("bgcolor", "ffffff").replace("#", "")
+        line_color = "#" + f.get("linecolor", "000000").replace("#", "")
+        
+        customer = f.get("customername", "").strip() or "Pelanggan"
+        header_title = f.get("headertitle", "INVOICE")
+        
+        names = f.getlist("itemname")
+        qtys = f.getlist("itemqty")
+        prices = f.getlist("itemprice")
+        
+        items = []
+        grand_total = 0
+        
+        for i in range(len(names)):
+            n = names[i].strip()
+            if not n: continue
+            try:
+                q = int(qtys[i])
+                p = int(prices[i])
+                total = q * p
+                grand_total += total
+                items.append({
+                    "name": n,
+                    "qty": q,
+                    "price": p,
+                    "total": total
+                })
+            except:
+                continue
 
-    user.company_name = clean("company_name", 160)
-    user.signature_name = clean("signature_name", 120)
-    user.signature_title = clean("signature_title", 120)
-    db.session.commit()
+        # Render Template Invoice
+        # Data user (termasuk company_name, signature_name) akan dipakai di template
+        return render_template(
+            "invoice_print_view.html",
+            user=user,
+            customer=customer,
+            items=items,
+            grand_total=grand_total,
+            template=template,
+            bg_color=bg_color,
+            line_color=line_color,
+            header_title=header_title,
+            date=datetime.now().strftime("%d %B %Y")
+        )
+        
+    except Exception as e:
+        logger.error(f"Generate Invoice Error: {e}")
+        return f"Terjadi kesalahan sistem: {str(e)}", 500
 
-    return jsonify(success=True)
-
-@app.route("/")
-def index():
-    return redirect(url_for("dashboard"))
+# --- AUTH ROUTES ---
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        username = request.form.get("username", "").strip()
-        password = request.form.get("password", "")
+        u = request.form.get("username", "").strip()
+        p = request.form.get("password", "")
 
-        try:
-            user = User.query.filter_by(username=username).first()
+        user = User.query.filter_by(username=u).first()
 
-            if not user:
-                flash("Username atau Password salah.", "error")
-                return render_template("login.html")
-
-            if not user.password:
-                flash("Akun ini terdaftar via Google. Silakan login dengan Google.", "error")
-                return render_template("login.html")
-
-            if not check_password_hash(user.password, password):
-                flash("Username atau Password salah.", "error")
-                return render_template("login.html")
-
+        if not user:
+            flash("Username atau Password salah.", "error")
+        elif not user.password:
+            flash("Akun ini login via Google. Silakan gunakan tombol Google.", "error")
+        elif not check_password_hash(user.password, p):
+            flash("Username atau Password salah.", "error")
+        else:
             session["user_id"] = user.id
-            flash("Login Berhasil!", "success")
-
-            if getattr(user, "is_admin", False):
+            if user.is_admin:
                 return redirect(url_for("admin_page"))
             return redirect(url_for("dashboard"))
-
-        except Exception as e:
-            flash(f"Database Error: {str(e)}", "error")
-            return render_template("login.html")
-
+            
     return render_template("login.html")
 
 @app.route("/register", methods=["POST"])
@@ -306,99 +429,71 @@ def register():
     username = request.form["username"].strip()
     password = request.form["password"]
 
-    try:
-        if User.query.filter_by(username=username).first():
-            flash("Username sudah dipakai.", "error")
-            return redirect(url_for("login"))
+    if User.query.filter_by(username=username).first():
+        flash("Username sudah digunakan.", "error")
+        return redirect(url_for("login"))
 
+    try:
         new_user = User(
             username=username,
             password=generate_password_hash(password),
-            is_premium=False,
-            is_admin=False,
+            is_premium=False
         )
-
         db.session.add(new_user)
         db.session.commit()
-        flash("Pendaftaran Berhasil! Silakan Login.", "success")
-
+        flash("Pendaftaran sukses, silakan login.", "success")
     except Exception as e:
         db.session.rollback()
-        flash(f"Error Register: {str(e)}", "error")
+        flash(f"Error: {str(e)}", "error")
 
     return redirect(url_for("login"))
 
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("Berhasil logout.", "info")
+    return redirect(url_for("dashboard"))
+
+# --- GOOGLE OAUTH ROUTES ---
+
 @app.route("/login/google")
 def login_google():
+    # Dengan ProxyFix, _external=True akan otomatis generate HTTPS jika di Azure
     redirect_uri = url_for("google_callback", _external=True)
-    if "azurewebsites.net" in redirect_uri:
-        redirect_uri = redirect_uri.replace("http://", "https://")
     return oauth.google.authorize_redirect(redirect_uri)
 
 @app.route("/login/google/callback")
 def google_callback():
     try:
         token = oauth.google.authorize_access_token()
-        user_info = token.get('userinfo')
+        info = token.get('userinfo')
         
-        if not user_info:
-            flash("Gagal mendapatkan info user dari Google.", "error")
+        if not info:
+            flash("Gagal mengambil data dari Google.", "error")
             return redirect(url_for('login'))
         
-        email = user_info.get('email')
-        name = user_info.get('name', email.split('@')[0] if email else 'User')
-        
-        if not email:
-            flash("Email tidak ditemukan di akun Google.", "error")
-            return redirect(url_for('login'))
+        email = info.get('email')
         
         user = User.query.filter_by(username=email).first()
         
         if not user:
+            # Buat user baru tanpa password (karena login sosmed)
             user = User(
                 username=email,
-                password=generate_password_hash(os.urandom(16).hex()),
-                is_premium=False,
-                is_admin=False
+                password=None, # Menandakan login via Google
+                is_premium=False
             )
             db.session.add(user)
             db.session.commit()
-            logger.info(f"New Google user: {email}")
-            flash(f"Akun baru berhasil dibuat untuk {name}!", "success")
+            flash("Akun baru berhasil dibuat!", "success")
         
         session['user_id'] = user.id
-        logger.info(f"Google login success: {email} (user_id={user.id})")
-        flash(f"Selamat datang, {name}!", "success")
-        
         return redirect(url_for('dashboard'))
         
     except Exception as e:
-        db.session.rollback()
-        logger.error(f"[OAuth] ERROR: {e}", exc_info=True)
-        flash(f"Login gagal: {str(e)}", "error")
+        logger.error(f"OAuth Error: {e}")
+        flash("Gagal login dengan Google.", "error")
         return redirect(url_for('login'))
-
-@app.before_request
-def track_visit():
-    if request.method != "GET":
-        return
-    if request.path.startswith("/static"):
-        return
-    if request.path.startswith("/admin"):
-        return
-
-    try:
-        v = PageVisit(path=request.path, user_id=session.get("user_id"))
-        db.session.add(v)
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-
-@app.route("/logout")
-def logout():
-    session.clear()
-    flash("Anda telah logout.", "info")
-    return redirect(url_for("dashboard"))
 
 @app.route("/dashboard")
 def dashboard():
@@ -406,7 +501,7 @@ def dashboard():
     if user_id:
         user = User.query.get(user_id)
         if user and user.is_admin:
-            user.is_premium = True
+            user.is_premium = True # Admin auto premium
     else:
         user = Guest()
 
@@ -415,241 +510,80 @@ def dashboard():
                          admin=user if getattr(user, 'is_admin', False) else None,
                          client_key=MIDTRANS_CLIENT_KEY)
 
+# --- UPLOAD & PROFILE ROUTES ---
+
 @app.route("/upload-logo", methods=["POST"])
 def upload_logo():
-    user_id = session.get("user_id")
-    if not user_id:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    file = request.files.get("logo")
-    if file:
-        filename = secure_filename(f"logo_{user_id}_{file.filename}")
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-
-        user = User.query.get(user_id)
-        user.company_logo = filename
+    if "user_id" not in session: return jsonify(error="Login required"), 401
+    
+    f = request.files.get("logo")
+    if f:
+        fn = secure_filename(f"logo_{session['user_id']}_{f.filename}")
+        f.save(os.path.join(app.config['UPLOAD_FOLDER'], fn))
+        
+        u = User.query.get(session['user_id'])
+        u.company_logo = fn
         db.session.commit()
-
-        return jsonify({"success": True, "filename": filename})
-
-    return jsonify({"error": "No file"}), 400
+        return jsonify(success=True, filename=fn)
+    return jsonify(error="File missing"), 400
 
 @app.route("/upload-signature", methods=["POST"])
 def upload_signature():
-    user_id = session.get("user_id")
-    if not user_id:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    file = request.files.get("signature")
-    if file:
-        filename = secure_filename(f"sig_{user_id}_{file.filename}")
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-
-        user = User.query.get(user_id)
-        user.signature_file = filename
+    if "user_id" not in session: return jsonify(error="Login required"), 401
+    
+    f = request.files.get("signature")
+    if f:
+        fn = secure_filename(f"sig_{session['user_id']}_{f.filename}")
+        f.save(os.path.join(app.config['UPLOAD_FOLDER'], fn))
+        
+        u = User.query.get(session['user_id'])
+        u.signature_file = fn
         db.session.commit()
+        return jsonify(success=True, filename=fn)
+    return jsonify(error="File missing"), 400
 
-        return jsonify({"success": True, "filename": filename})
-
-    return jsonify({"error": "No file"}), 400
-
-@app.route("/update_address", methods=["POST"])
-def update_address():
-    if "user_id" not in session:
-        return jsonify({"error": "Login required"}), 401
-
+@app.route("/premium/profile", methods=["POST"])
+def update_profile():
+    if "user_id" not in session: return jsonify(error="Login required"), 401
+    
     user = User.query.get(session["user_id"])
-    if not user or not user.is_premium:
-        return jsonify({"error": "Premium only"}), 403
-
+    if not user.is_premium: return jsonify(error="Premium only"), 403
+    
     data = request.get_json(silent=True) or {}
-    address = data.get("address", "")
-
-    user.company_address = address
-    db.session.commit()
-
-    return jsonify({"success": True})
-
-@app.route("/get-payment-token", methods=["POST"])
-def get_payment_token():
-    # 1. Cek Login Session
-    user_id = session.get("user_id")
-    if not user_id:
-        return jsonify({"error": "Silahkan login terlebih dahulu"}), 401
-
-    # 2. Ambil Data User dari Database
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({"error": "User tidak ditemukan"}), 404
-
-    # 3. Cek Status Premium
-    if user.is_premium and user.premium_expiry and user.premium_expiry > datetime.now():
-        return jsonify({"error": "Anda sudah Premium!"}), 403
-
-    # 4. Inisialisasi Midtrans Snap
-    snap = midtransclient.Snap(
-        is_production=False,
-        server_key=MIDTRANS_SERVER_KEY
-    )
-
-    # ==========================================
-    # SOLUSI BEST PRACTICE (ANTI ERROR)
-    # ==========================================
     
-    # Logika penentuan Email & Nama
-    if "@" in user.username:
-        # KASUS LOGIN GOOGLE: Username sudah berupa email valid
-        customer_email = user.username.strip()
-        
-        # Best Practice UX: Jangan jadikan email sebagai nama, ambil bagian depannya saja
-        # Contoh: "budi.santoso@gmail.com" -> Nama: "budi.santoso"
-        customer_name = user.username.split("@")[0]
-    else:
-        # KASUS LOGIN BIASA: Username murni (bukan email)
-        customer_name = user.username.strip()
-        
-        # Tambahkan dummy domain agar valid di mata Midtrans
-        customer_email = f"{user.username}@example.com"
+    user.company_name = data.get("company_name", "").strip()[:150] or None
+    user.signature_name = data.get("signature_name", "").strip()[:100] or None
+    user.signature_title = data.get("signature_title", "").strip()[:100] or None
+    
+    db.session.commit()
+    return jsonify(success=True)
 
-    # Pastikan tidak ada spasi kosong yang tidak sengaja terbawa
-    customer_email = customer_email.replace(" ", "")
-
-    # Generate Order ID Unik
-    order_id = f"PREMIUM-{user.id}-{int(time.time())}"
-
-    # Susun Parameter Request (Payload)
-    param = {
-        "transaction_details": {
-            "order_id": order_id,
-            "gross_amount": 50000
-        },
-        "customer_details": {
-            "first_name": customer_name,  # Nama sudah bersih
-            "email": customer_email       # Email sudah dipastikan valid formatnya
-        },
-        "usage_limit": 1
-    }
-
-    # Eksekusi Request ke Midtrans
-    try:
-        transaction = snap.create_transaction(param)
-        logger.info(f"Payment token created for user {user.id} ({customer_email}): {transaction['token']}")
-        return jsonify({"token": transaction['token']})
-        
-    except Exception as e:
-        # Log error lengkap ke console server agar mudah debugging
-        logger.error(f"Error creating payment for {user.username}: {e}", exc_info=True)
-        
-        # Beri respon JSON error ke frontend
-        # Jika error spesifik dari Midtrans, kita tampilkan pesannya
-        return jsonify({"error": f"Gagal memproses pembayaran: {str(e)}"}), 500
-
-@app.route("/payment-success", methods=["POST"])
-def payment_success():
-    if "user_id" not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-
+@app.route("/update-address", methods=["POST"])
+def update_address():
+    if "user_id" not in session: return jsonify(error="Login required"), 401
     user = User.query.get(session["user_id"])
-    if not user:
-        return jsonify({"error": "user_not_found"}), 401
-
-    user.is_premium = True
-    user.premium_expiry = datetime.now() + timedelta(days=30)
-    db.session.commit()
-
-    logger.info(f"[Payment] User {user.username} upgraded to premium until {user.premium_expiry}")
-
-    return jsonify({"status": "success"})
-
-@app.route("/generate-invoice", methods=["POST"])
-def generate_invoice():
-    logger.info("=== START GENERATE INVOICE ===")
+    if not user.is_premium: return jsonify(error="Premium only"), 403
     
-    # [FIX] 1. Catat aktivitas ini ke database PageVisit secara manual
-    # Karena track_visit global mengabaikan POST request
-    try:
-        user_id = session.get("user_id")
-        # Path harus persis '/generate-invoice' agar terbaca di query admin
-        visit = PageVisit(path='/generate-invoice', user_id=user_id)
-        db.session.add(visit)
-        db.session.commit()
-    except Exception as e:
-        # Jika logging gagal, jangan batalkan proses pembuatan invoice
-        logger.error(f"Gagal mencatat log visit: {e}")
-        db.session.rollback()
+    data = request.get_json() or {}
+    user.company_address = data.get("address", "").strip()
+    db.session.commit()
+    return jsonify(success=True)
 
-    # [LOGIC UTAMA] Lanjut ke proses pembuatan invoice seperti biasa
+# Tracking umum (GET requests selain static & admin)
+@app.before_request
+def track_visit():
+    if request.method != "GET": return
+    if request.path.startswith(("/static", "/admin")): return
+    
     try:
-        user = User.query.get(user_id) if user_id else Guest()
-        
-        f = request.form
-        
-        template = f.get("template", "basic")
-        bg_color = f.get("bgcolor", "ffffff")
-        line_color = f.get("linecolor", "000000")
-        header_title = f.get("headertitle", "INVOICE")
-        
-        if bg_color and not bg_color.startswith("#"):
-            bg_color = "#" + bg_color
-        if line_color and not line_color.startswith("#"):
-            line_color = "#" + line_color
-        
-        customer = (f.get("customername") or "").strip()
-        
-        names = f.getlist("itemname")
-        qtys = f.getlist("itemqty")
-        prices = f.getlist("itemprice")
-        
-        items = []
-        grand_total = 0
-        max_items = 10
-        
-        for i in range(min(len(names), len(qtys), len(prices), max_items)):
-            name = (names[i] or "").strip()
-            try:
-                qty = int(qtys[i])
-                price = int(prices[i])
-            except (ValueError, TypeError) as e:
-                logger.error(f"Error parsing item {i}: {e}")
-                continue
-            
-            if not name or qty <= 0 or price <= 0:
-                continue
-            
-            total = qty * price
-            grand_total += total
-            items.append({
-                "name": name,
-                "qty": qty,
-                "price": price,
-                "total": total
-            })
-        
-        if not items:
-            logger.error("No valid items found!")
-            return "Error: Minimal harus ada 1 item valid", 400
-        
-        result = render_template(
-            "invoice_print_view.html",
-            user=user,
-            customer=customer,
-            items=items,
-            grand_total=grand_total,
-            template=template,
-            header_title=header_title,
-            bg_color=bg_color,
-            line_color=line_color,
-            date=datetime.now().strftime("%d %B %Y"),
-        )
-        
-        logger.info("Template rendered successfully!")
-        return result
-        
-    except Exception as e:
-        logger.error(f"EXCEPTION in generate_invoice: {e}", exc_info=True)
-        return f"Internal Server Error: {str(e)}", 500
+        # Simpan TS dalam UTC agar konsisten
+        v = PageVisit(path=request.path, user_id=session.get("user_id"))
+        db.session.add(v)
+        db.session.commit()
+    except:
+        db.session.rollback()
 
 if __name__ == "__main__":
     init_db()
-    port = int(os.environ.get("PORT", "8000"))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    port = int(os.environ.get("PORT", 8000))
+    app.run(host="0.0.0.0", port=port)
