@@ -444,23 +444,23 @@ def google_callback():
         token = oauth.google.authorize_access_token()
         info = token.get('userinfo')
         
-        # --- DEBUGGING: Cek apakah token masuk ---
         if not info:
-            logger.error("Info user kosong")
-            flash("Error: Gagal mengambil data user (Token kosong).", "error")
+            flash("Gagal mengambil data dari Google.", "error")
             return redirect(url_for('login'))
         
         email = info.get('email')
         
-        # --- DEBUGGING: Print email ke log ---
-        logger.info(f"Google Login Success for: {email}")
-
         user = User.query.filter_by(username=email).first()
         
         if not user:
+            # --- PERBAIKAN DI SINI ---
+            # Kita buat password acak agar database tidak error (NOT NULL constraint)
+            # User tidak perlu tahu password ini karena mereka login via Google
+            dummy_password = os.urandom(16).hex()
+            
             user = User(
                 username=email,
-                password=None,
+                password=generate_password_hash(dummy_password), # Isi password dummy
                 is_premium=False
             )
             db.session.add(user)
@@ -471,19 +471,11 @@ def google_callback():
         return redirect(url_for('dashboard'))
         
     except Exception as e:
-        # --- PENTING: TAMPILKAN ERROR ASLI KE LAYAR ---
-        error_msg = str(e)
-        logger.error(f"OAuth Error Detail: {error_msg}")
-        
-        # Jika errornya 'mismatch_redirect_uri', kita tahu solusinya
-        if "mismatch_redirect_uri" in error_msg:
-             flash(f"Error URI Mismatch! Pastikan di Google Console sudah ada: {url_for('google_callback', _external=True)}", "error")
-        else:
-             # Tampilkan error mentah agar kita bisa baca
-             flash(f"Gagal Login Google. Error System: {error_msg}", "error")
-             
+        logger.error(f"OAuth Error: {e}")
+        # Tampilkan error jika masih gagal
+        flash(f"Gagal Login Google: {str(e)}", "error")
         return redirect(url_for('login'))
-
+    
 @app.route("/dashboard")
 def dashboard():
     user_id = session.get("user_id")
