@@ -143,25 +143,20 @@ def require_admin_user():
         return None
     return u
 
+# [FIX] Redirect /admin/dashboard ke /admin agar tidak salah tampilan
 @app.route("/admin/dashboard")
-def admin_dashboard():
-    admin = require_admin_user()
-    if not admin:
-        return redirect(url_for("login", next=request.path))
-    return render_template(
-        "dashboard.html",
-        user=admin,
-        admin=admin,
-        admin_page="dashboard",
-        client_key=MIDTRANS_CLIENT_KEY
-    )
+def admin_dashboard_redirect():
+    return redirect(url_for("admin_page"))
 
+# [FIX] Endpoint Admin Utama - Menggunakan dashboard_admin.html
 @app.route("/admin")
 def admin_page():
+    # 1. Cek User Admin
     admin = require_admin_user()
     if not admin:
         return redirect(url_for("login", next=request.path))
 
+    # 2. Hitung Grafik Pengunjung (7 Hari Terakhir)
     start_date = datetime.now() - timedelta(days=7)
     visit_rows = db.session.query(
         func.date(PageVisit.ts).label("d"),
@@ -174,13 +169,15 @@ def admin_page():
     data_visits = [int(r.c) for r in visit_rows]
     total_visits = sum(data_visits)
 
+    # 3. Hitung Grafik Input Invoice (HARI INI per Jam)
+    # Ini sekarang akan berfungsi karena kita sudah perbaiki 'generate_invoice' di atas
     today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     input_rows = db.session.query(
         func.hour(PageVisit.ts).label("h"),
         func.count(PageVisit.id).label("c"),
     ).filter(
         PageVisit.ts >= today_start,
-        PageVisit.path == '/generate-invoice'
+        PageVisit.path == '/generate-invoice'  # Membaca log yang kita buat manual tadi
     ).group_by(func.hour(PageVisit.ts)).all()
 
     input_data = [0] * 24
@@ -189,16 +186,16 @@ def admin_page():
     input_labels = [f"{i}:00" for i in range(24)]
     total_inputs = sum(input_data)
 
+    # 4. Logika Pagination & Tabel User
     sort = request.args.get("sort", "expiry")
     direction = request.args.get("dir", "asc")
     page = int(request.args.get("page", 1))
     per_page = 8
 
     q = User.query
-
     if sort == "id":
         q = q.order_by(User.id.asc() if direction == "asc" else User.id.desc())
-    else:
+    else: # sort by expiry
         q = q.order_by(
             User.premium_expiry.asc() if direction == "asc"
             else User.premium_expiry.desc()
@@ -222,8 +219,9 @@ def admin_page():
             if u.premium_expiry else "-"
         })
 
+    # 5. Render Template Admin yang BENAR
     return render_template(
-        "dashboard_admin.html",
+        "dashboard_admin.html",  # Pastikan file HTML Anda bernama ini
         admin=admin,
         labels=labels,
         data=data_visits,
@@ -474,42 +472,77 @@ def update_address():
 
 @app.route("/get-payment-token", methods=["POST"])
 def get_payment_token():
+    # 1. Cek Login Session
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"error": "Silahkan login terlebih dahulu"}), 401
 
+    # 2. Ambil Data User dari Database
     user = User.query.get(user_id)
     if not user:
         return jsonify({"error": "User tidak ditemukan"}), 404
 
+    # 3. Cek Status Premium
     if user.is_premium and user.premium_expiry and user.premium_expiry > datetime.now():
         return jsonify({"error": "Anda sudah Premium!"}), 403
 
+    # 4. Inisialisasi Midtrans Snap
     snap = midtransclient.Snap(
         is_production=False,
         server_key=MIDTRANS_SERVER_KEY
     )
 
+    # ==========================================
+    # SOLUSI BEST PRACTICE (ANTI ERROR)
+    # ==========================================
+    
+    # Logika penentuan Email & Nama
+    if "@" in user.username:
+        # KASUS LOGIN GOOGLE: Username sudah berupa email valid
+        customer_email = user.username.strip()
+        
+        # Best Practice UX: Jangan jadikan email sebagai nama, ambil bagian depannya saja
+        # Contoh: "budi.santoso@gmail.com" -> Nama: "budi.santoso"
+        customer_name = user.username.split("@")[0]
+    else:
+        # KASUS LOGIN BIASA: Username murni (bukan email)
+        customer_name = user.username.strip()
+        
+        # Tambahkan dummy domain agar valid di mata Midtrans
+        customer_email = f"{user.username}@example.com"
+
+    # Pastikan tidak ada spasi kosong yang tidak sengaja terbawa
+    customer_email = customer_email.replace(" ", "")
+
+    # Generate Order ID Unik
     order_id = f"PREMIUM-{user.id}-{int(time.time())}"
+
+    # Susun Parameter Request (Payload)
     param = {
         "transaction_details": {
             "order_id": order_id,
             "gross_amount": 50000
         },
         "customer_details": {
-            "first_name": user.username,
-            "email": f"{user.username}@example.com"
+            "first_name": customer_name,  # Nama sudah bersih
+            "email": customer_email       # Email sudah dipastikan valid formatnya
         },
         "usage_limit": 1
     }
 
+    # Eksekusi Request ke Midtrans
     try:
         transaction = snap.create_transaction(param)
-        logger.info(f"Payment token created for user {user.id}: {transaction['token']}")
+        logger.info(f"Payment token created for user {user.id} ({customer_email}): {transaction['token']}")
         return jsonify({"token": transaction['token']})
+        
     except Exception as e:
-        logger.error(f"Error creating payment: {e}")
-        return jsonify({"error": str(e)}), 500
+        # Log error lengkap ke console server agar mudah debugging
+        logger.error(f"Error creating payment for {user.username}: {e}", exc_info=True)
+        
+        # Beri respon JSON error ke frontend
+        # Jika error spesifik dari Midtrans, kita tampilkan pesannya
+        return jsonify({"error": f"Gagal memproses pembayaran: {str(e)}"}), 500
 
 @app.route("/payment-success", methods=["POST"])
 def payment_success():
@@ -532,8 +565,21 @@ def payment_success():
 def generate_invoice():
     logger.info("=== START GENERATE INVOICE ===")
     
+    # [FIX] 1. Catat aktivitas ini ke database PageVisit secara manual
+    # Karena track_visit global mengabaikan POST request
     try:
         user_id = session.get("user_id")
+        # Path harus persis '/generate-invoice' agar terbaca di query admin
+        visit = PageVisit(path='/generate-invoice', user_id=user_id)
+        db.session.add(visit)
+        db.session.commit()
+    except Exception as e:
+        # Jika logging gagal, jangan batalkan proses pembuatan invoice
+        logger.error(f"Gagal mencatat log visit: {e}")
+        db.session.rollback()
+
+    # [LOGIC UTAMA] Lanjut ke proses pembuatan invoice seperti biasa
+    try:
         user = User.query.get(user_id) if user_id else Guest()
         
         f = request.form
