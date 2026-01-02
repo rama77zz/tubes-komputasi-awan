@@ -6,7 +6,7 @@ import time
 from datetime import datetime, timedelta
 from sqlalchemy import func
 from werkzeug.security import generate_password_hash, check_password_hash
-from werkzeug.middleware.proxy_fix import ProxyFix  # [PENTING] Untuk HTTPS di Azure
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 
 from dotenv import load_dotenv
@@ -35,10 +35,12 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# [FIX] Middleware ProxyFix
-# Ini membuat Flask "sadar" bahwa dia berjalan di belakang HTTPS (Azure)
-# Mengatasi masalah redirect URI mismatch pada Google OAuth
-app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+# [FIX] Middleware ProxyFix untuk Azure
+# Setting ini memberitahu Flask untuk mempercayai header dari Load Balancer Azure
+# x_proto=1: Mengatasi http vs https (Google Login Error)
+# x_host=1: Mengatasi nama domain
+# x_for=1 & x_prefix=1: Tambahan untuk kestabilan di Azure Linux
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 app.secret_key = "rahasia_lokal_123"
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -61,7 +63,8 @@ os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 db = SQLAlchemy(app)
 
-# --- KONFIGURASI MIDTRANS ---
+# --- KONFIGURASI MIDTRANS (SANDBOX) ---
+# Sesuai dengan screenshot Anda sebelumnya
 MIDTRANS_SERVER_KEY = "Mid-server-JEHBUtBFFwcJ8Sw8GypuXrQZ"
 MIDTRANS_CLIENT_KEY = "Mid-client-wXRT3UdSUW4t95P6"
 
@@ -104,7 +107,7 @@ class User(db.Model):
 
 class PageVisit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    ts = db.Column(db.DateTime, default=datetime.utcnow, index=True) # Selalu simpan dalam UTC
+    ts = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     path = db.Column(db.String(255), nullable=False)
     user_id = db.Column(db.Integer, nullable=True)
 
@@ -170,29 +173,21 @@ def admin_page():
     # B. Grafik Input Invoice (HARI INI - WIB)
     # Server Azure pakai UTC. Kita perlu geser waktu agar sesuai "Hari Ini" di Indonesia (WIB)
     
-    # Hitung jam sekarang di WIB
     now_wib = now_utc + timedelta(hours=7)
-    
-    # Tentukan awal hari ini dalam WIB (Jam 00:00:00 WIB)
     today_wib_start = now_wib.replace(hour=0, minute=0, second=0, microsecond=0)
-    
-    # Konversi balik ke UTC untuk query database
     query_start_utc = today_wib_start - timedelta(hours=7)
 
-    # Ambil semua log input invoice sejak jam 00:00 WIB tadi
     input_rows = db.session.query(PageVisit.ts).filter(
         PageVisit.ts >= query_start_utc,
         PageVisit.path == '/generate-invoice'
     ).all()
 
-    # Siapkan array 24 jam
     input_data = [0] * 24
     
     for r in input_rows:
-        # Timestamp dari DB adalah UTC. Kita ubah ke WIB (+7 jam)
+        # Konversi UTC ke WIB untuk tampilan
         log_time_wib = r.ts + timedelta(hours=7)
         hour_index = log_time_wib.hour
-        # Masukkan ke bucket jam yang sesuai
         if 0 <= hour_index < 24:
             input_data[hour_index] += 1
 
@@ -257,39 +252,27 @@ def get_payment_token():
         return jsonify({"error": "Anda sudah Premium!"}), 403
 
     # --- [FIX] LOGIKA VALIDASI NAMA/EMAIL UNTUK MIDTRANS ---
-    # Midtrans menolak jika nama mengandung spasi/simbol aneh atau email tidak valid formatnya
-    
     customer_email = ""
     customer_name = ""
 
     if "@" in user.username:
-        # Kasus 1: Login via Google (Username adalah Email)
+        # Kasus 1: Login via Google
         customer_email = user.username.strip()
-        
-        # Ambil bagian depan email sebagai nama (sebelum @)
         raw_name = user.username.split("@")[0]
-        
-        # Bersihkan nama: hanya ambil huruf dan angka (Midtrans strict)
         customer_name = ''.join(e for e in raw_name if e.isalnum())
-        
-        # Fallback jika nama jadi kosong setelah dibersihkan
         if len(customer_name) < 2:
             customer_name = "UserGoogle"
     else:
-        # Kasus 2: Login Biasa (Username bukan email)
+        # Kasus 2: Login Biasa
         customer_name = ''.join(e for e in user.username if e.isalnum())
         if not customer_name: customer_name = "UserApps"
-        
-        # Buat dummy email valid
         customer_email = f"{customer_name}@example.com"
 
-    # Inisialisasi Snap
     snap = midtransclient.Snap(
         is_production=False,
         server_key=MIDTRANS_SERVER_KEY
     )
 
-    # Order ID unik
     order_id = f"PREM-{user.id}-{int(time.time())}"
 
     param = {
@@ -320,7 +303,6 @@ def payment_success():
     user = User.query.get(session["user_id"])
     if user:
         user.is_premium = True
-        # Tambah 30 hari premium
         user.premium_expiry = datetime.now() + timedelta(days=30)
         db.session.commit()
         return jsonify({"status": "success"})
@@ -329,20 +311,17 @@ def payment_success():
 
 @app.route("/generate-invoice", methods=["POST"])
 def generate_invoice():
-    # --- [FIX] PENCATATAN LOG MANUAL UNTUK GRAFIK ---
-    # Log aktivitas ini secara manual agar masuk ke Database PageVisit
+    # --- LOG VISIT MANUAL ---
     try:
         if "user_id" in session:
-            # Gunakan path yang persis sama dengan filter di admin
             v = PageVisit(path='/generate-invoice', user_id=session["user_id"])
             db.session.add(v)
             db.session.commit()
     except Exception as e:
-        # Jangan sampai error logging menghentikan user membuat invoice
         logger.error(f"Failed logging visit: {e}")
         db.session.rollback()
 
-    # --- PROSES PEMBUATAN INVOICE ---
+    # --- PROSES INVOICE ---
     try:
         user_id = session.get("user_id")
         user = User.query.get(user_id) if user_id else Guest()
@@ -350,7 +329,6 @@ def generate_invoice():
         f = request.form
         template = f.get("template", "basic")
         
-        # Bersihkan kode warna (hapus # jika ada)
         bg_color = "#" + f.get("bgcolor", "ffffff").replace("#", "")
         line_color = "#" + f.get("linecolor", "000000").replace("#", "")
         
@@ -381,8 +359,6 @@ def generate_invoice():
             except:
                 continue
 
-        # Render Template Invoice
-        # Data user (termasuk company_name, signature_name) akan dipakai di template
         return render_template(
             "invoice_print_view.html",
             user=user,
@@ -480,7 +456,7 @@ def google_callback():
             # Buat user baru tanpa password (karena login sosmed)
             user = User(
                 username=email,
-                password=None, # Menandakan login via Google
+                password=None,
                 is_premium=False
             )
             db.session.add(user)
@@ -492,7 +468,8 @@ def google_callback():
         
     except Exception as e:
         logger.error(f"OAuth Error: {e}")
-        flash("Gagal login dengan Google.", "error")
+        # Pesan ini akan muncul di Log Stream jika gagal
+        flash("Gagal login dengan Google. Cek Log Server.", "error")
         return redirect(url_for('login'))
 
 @app.route("/dashboard")
@@ -501,7 +478,7 @@ def dashboard():
     if user_id:
         user = User.query.get(user_id)
         if user and user.is_admin:
-            user.is_premium = True # Admin auto premium
+            user.is_premium = True 
     else:
         user = Guest()
 
@@ -569,19 +546,18 @@ def update_address():
     db.session.commit()
     return jsonify(success=True)
 
-# Tracking umum (GET requests selain static & admin)
 @app.before_request
 def track_visit():
     if request.method != "GET": return
     if request.path.startswith(("/static", "/admin")): return
     
     try:
-        # Simpan TS dalam UTC agar konsisten
         v = PageVisit(path=request.path, user_id=session.get("user_id"))
         db.session.add(v)
         db.session.commit()
     except:
         db.session.rollback()
+
 
 if __name__ == "__main__":
     init_db()
