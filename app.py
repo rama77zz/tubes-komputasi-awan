@@ -444,16 +444,20 @@ def google_callback():
         token = oauth.google.authorize_access_token()
         info = token.get('userinfo')
         
+        # --- DEBUGGING: Cek apakah token masuk ---
         if not info:
-            flash("Gagal mengambil data dari Google.", "error")
+            logger.error("Info user kosong")
+            flash("Error: Gagal mengambil data user (Token kosong).", "error")
             return redirect(url_for('login'))
         
         email = info.get('email')
         
+        # --- DEBUGGING: Print email ke log ---
+        logger.info(f"Google Login Success for: {email}")
+
         user = User.query.filter_by(username=email).first()
         
         if not user:
-            # Buat user baru tanpa password (karena login sosmed)
             user = User(
                 username=email,
                 password=None,
@@ -467,9 +471,17 @@ def google_callback():
         return redirect(url_for('dashboard'))
         
     except Exception as e:
-        logger.error(f"OAuth Error: {e}")
-        # Pesan ini akan muncul di Log Stream jika gagal
-        flash("Gagal login dengan Google. Cek Log Server.", "error")
+        # --- PENTING: TAMPILKAN ERROR ASLI KE LAYAR ---
+        error_msg = str(e)
+        logger.error(f"OAuth Error Detail: {error_msg}")
+        
+        # Jika errornya 'mismatch_redirect_uri', kita tahu solusinya
+        if "mismatch_redirect_uri" in error_msg:
+             flash(f"Error URI Mismatch! Pastikan di Google Console sudah ada: {url_for('google_callback', _external=True)}", "error")
+        else:
+             # Tampilkan error mentah agar kita bisa baca
+             flash(f"Gagal Login Google. Error System: {error_msg}", "error")
+             
         return redirect(url_for('login'))
 
 @app.route("/dashboard")
