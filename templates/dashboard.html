@@ -1,31 +1,32 @@
-  <!DOCTYPE html>
-  <html lang="id"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - InvoiceInAja</title>
     
-    <title>InvoiceInAja</title>
-    <script src="./InvoiceInAja_files/saved_resource"></script><style type="text/css" id="operaUserStyle"></style>
-    <link rel="stylesheet" href="./InvoiceInAja_files/all.min.css">
-
-    <!-- FIX: Midtrans Snap Script - Pastikan client_key benar -->
-    <script type="text/javascript" src="./InvoiceInAja_files/snap.js.download" data-client-key="Mid-client-wXRT3UdSUW4t95P6"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ client_key }}"></script>
 
     <style>
-      ::-webkit-scrollbar { width: 8px; }
-      ::-webkit-scrollbar-track { background: #f1f1f1; }
-      ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
-      ::-webkit-scrollbar-thumb:hover { background: #555; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
     </style>
-  <style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.container{width:100%}@media (min-width: 640px){.container{max-width:640px}}@media (min-width: 768px){.container{max-width:768px}}@media (min-width: 1024px){.container{max-width:1024px}}@media (min-width: 1280px){.container{max-width:1280px}}@media (min-width: 1536px){.container{max-width:1536px}}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.sticky{position:sticky}.inset-0{inset:0px}.right-4{right:1rem}.top-0{top:0px}.z-50{z-index:50}.mx-auto{margin-left:auto;margin-right:auto}.mb-1{margin-bottom:0.25rem}.mb-2{margin-bottom:0.5rem}.mb-3{margin-bottom:0.75rem}.mb-4{margin-bottom:1rem}.mb-6{margin-bottom:1.5rem}.mb-8{margin-bottom:2rem}.ml-2{margin-left:0.5rem}.ml-6{margin-left:1.5rem}.ml-auto{margin-left:auto}.mr-4{margin-right:1rem}.mt-0\.5{margin-top:0.125rem}.mt-1{margin-top:0.25rem}.mt-2{margin-top:0.5rem}.mt-4{margin-top:1rem}.block{display:block}.flex{display:flex}.grid{display:grid}.hidden{display:none}.h-10{height:2.5rem}.h-12{height:3rem}.h-16{height:4rem}.h-5{height:1.25rem}.h-fit{height:-moz-fit-content;height:fit-content}.h-full{height:100%}.w-14{width:3.5rem}.w-16{width:4rem}.w-24{width:6rem}.w-40{width:10rem}.w-5{width:1.25rem}.w-auto{width:auto}.w-full{width:100%}.max-w-md{max-width:28rem}.flex-1{flex:1 1 0%}.transform{transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.cursor-pointer{cursor:pointer}.resize-none{resize:none}.grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.flex-col{flex-direction:column}.items-start{align-items:flex-start}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:0.25rem}.gap-2{gap:0.5rem}.gap-3{gap:0.75rem}.gap-4{gap:1rem}.gap-8{gap:2rem}.space-y-2 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.5rem * var(--tw-space-y-reverse))}.space-y-3 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.75rem * var(--tw-space-y-reverse))}.space-y-4 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem * var(--tw-space-y-reverse))}.space-y-6 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1.5rem * var(--tw-space-y-reverse))}.divide-y > :not([hidden]) ~ :not([hidden]){--tw-divide-y-reverse:0;border-top-width:calc(1px * calc(1 - var(--tw-divide-y-reverse)));border-bottom-width:calc(1px * var(--tw-divide-y-reverse))}.divide-gray-100 > :not([hidden]) ~ :not([hidden]){--tw-divide-opacity:1;border-color:rgb(243 244 246 / var(--tw-divide-opacity, 1))}.overflow-hidden{overflow:hidden}.overflow-x-auto{overflow-x:auto}.rounded{border-radius:0.25rem}.rounded-2xl{border-radius:1rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.rounded-xl{border-radius:0.75rem}.rounded-t-2xl{border-top-left-radius:1rem;border-top-right-radius:1rem}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-t{border-top-width:1px}.border-blue-200{--tw-border-opacity:1;border-color:rgb(191 219 254 / var(--tw-border-opacity, 1))}.border-gray-200{--tw-border-opacity:1;border-color:rgb(229 231 235 / var(--tw-border-opacity, 1))}.border-gray-300{--tw-border-opacity:1;border-color:rgb(209 213 219 / var(--tw-border-opacity, 1))}.border-indigo-200{--tw-border-opacity:1;border-color:rgb(199 210 254 / var(--tw-border-opacity, 1))}.border-indigo-500{--tw-border-opacity:1;border-color:rgb(99 102 241 / var(--tw-border-opacity, 1))}.border-orange-200{--tw-border-opacity:1;border-color:rgb(254 215 170 / var(--tw-border-opacity, 1))}.bg-gray-100{--tw-bg-opacity:1;background-color:rgb(243 244 246 / var(--tw-bg-opacity, 1))}.bg-black{--tw-bg-opacity:1;background-color:rgb(0 0 0 / var(--tw-bg-opacity, 1))}.bg-blue-50{--tw-bg-opacity:1;background-color:rgb(239 246 255 / var(--tw-bg-opacity, 1))}.bg-gray-200{--tw-bg-opacity:1;background-color:rgb(229 231 235 / var(--tw-bg-opacity, 1))}.bg-gray-50{--tw-bg-opacity:1;background-color:rgb(249 250 251 / var(--tw-bg-opacity, 1))}.bg-gray-600{--tw-bg-opacity:1;background-color:rgb(75 85 99 / var(--tw-bg-opacity, 1))}.bg-green-100{--tw-bg-opacity:1;background-color:rgb(220 252 231 / var(--tw-bg-opacity, 1))}.bg-indigo-600{--tw-bg-opacity:1;background-color:rgb(79 70 229 / var(--tw-bg-opacity, 1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.bg-opacity-50{--tw-bg-opacity:0.5}.bg-gradient-to-r{background-image:linear-gradient(to right, var(--tw-gradient-stops))}.from-indigo-500{--tw-gradient-from:#6366f1 var(--tw-gradient-from-position);--tw-gradient-to:rgb(99 102 241 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.to-purple-600{--tw-gradient-to:#9333ea var(--tw-gradient-to-position)}.object-contain{object-fit:contain}.p-1{padding:0.25rem}.p-2{padding:0.5rem}.p-3{padding:0.75rem}.p-4{padding:1rem}.p-6{padding:1.5rem}.p-8{padding:2rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.px-6{padding-left:1.5rem;padding-right:1.5rem}.px-8{padding-left:2rem;padding-right:2rem}.py-0\.5{padding-top:0.125rem;padding-bottom:0.125rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.py-3{padding-top:0.75rem;padding-bottom:0.75rem}.py-4{padding-top:1rem;padding-bottom:1rem}.pb-4{padding-bottom:1rem}.pt-0{padding-top:0px}.pt-2{padding-top:0.5rem}.pt-3{padding-top:0.75rem}.pt-6{padding-top:1.5rem}.text-left{text-align:left}.text-center{text-align:center}.text-right{text-align:right}.font-sans{font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"}.text-2xl{font-size:1.5rem;line-height:2rem}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:0.75rem;line-height:1rem}.font-bold{font-weight:700}.font-semibold{font-weight:600}.text-gray-800{--tw-text-opacity:1;color:rgb(31 41 55 / var(--tw-text-opacity, 1))}.text-blue-700{--tw-text-opacity:1;color:rgb(29 78 216 / var(--tw-text-opacity, 1))}.text-gray-300{--tw-text-opacity:1;color:rgb(209 213 219 / var(--tw-text-opacity, 1))}.text-gray-400{--tw-text-opacity:1;color:rgb(156 163 175 / var(--tw-text-opacity, 1))}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128 / var(--tw-text-opacity, 1))}.text-gray-600{--tw-text-opacity:1;color:rgb(75 85 99 / var(--tw-text-opacity, 1))}.text-gray-700{--tw-text-opacity:1;color:rgb(55 65 81 / var(--tw-text-opacity, 1))}.text-green-500{--tw-text-opacity:1;color:rgb(34 197 94 / var(--tw-text-opacity, 1))}.text-green-600{--tw-text-opacity:1;color:rgb(22 163 74 / var(--tw-text-opacity, 1))}.text-indigo-500{--tw-text-opacity:1;color:rgb(99 102 241 / var(--tw-text-opacity, 1))}.text-indigo-600{--tw-text-opacity:1;color:rgb(79 70 229 / var(--tw-text-opacity, 1))}.text-indigo-900{--tw-text-opacity:1;color:rgb(49 46 129 / var(--tw-text-opacity, 1))}.text-orange-600{--tw-text-opacity:1;color:rgb(234 88 12 / var(--tw-text-opacity, 1))}.text-orange-900{--tw-text-opacity:1;color:rgb(124 45 18 / var(--tw-text-opacity, 1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.placeholder-gray-400::placeholder{--tw-placeholder-opacity:1;color:rgb(156 163 175 / var(--tw-placeholder-opacity, 1))}.opacity-70{opacity:0.7}.opacity-90{opacity:0.9}.shadow{--tw-shadow:0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-2xl{--tw-shadow:0 25px 50px -12px rgb(0 0 0 / 0.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgb(0 0 0 / 0.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.outline-none{outline:2px solid transparent;outline-offset:2px}.transition{transition-property:color, background-color, border-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.hover\:-translate-y-0\.5:hover{--tw-translate-y:-0.125rem;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.hover\:-translate-y-1:hover{--tw-translate-y:-0.25rem;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.hover\:scale-105:hover{--tw-scale-x:1.05;--tw-scale-y:1.05;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.hover\:bg-gray-100:hover{--tw-bg-opacity:1;background-color:rgb(243 244 246 / var(--tw-bg-opacity, 1))}.hover\:bg-gray-50:hover{--tw-bg-opacity:1;background-color:rgb(249 250 251 / var(--tw-bg-opacity, 1))}.hover\:bg-gray-700:hover{--tw-bg-opacity:1;background-color:rgb(55 65 81 / var(--tw-bg-opacity, 1))}.hover\:bg-indigo-50:hover{--tw-bg-opacity:1;background-color:rgb(238 242 255 / var(--tw-bg-opacity, 1))}.hover\:bg-indigo-700:hover{--tw-bg-opacity:1;background-color:rgb(67 56 202 / var(--tw-bg-opacity, 1))}.hover\:bg-orange-50:hover{--tw-bg-opacity:1;background-color:rgb(255 247 237 / var(--tw-bg-opacity, 1))}.hover\:bg-red-50:hover{--tw-bg-opacity:1;background-color:rgb(254 242 242 / var(--tw-bg-opacity, 1))}.hover\:text-indigo-800:hover{--tw-text-opacity:1;color:rgb(55 48 163 / var(--tw-text-opacity, 1))}.hover\:text-red-500:hover{--tw-text-opacity:1;color:rgb(239 68 68 / var(--tw-text-opacity, 1))}.hover\:underline:hover{-webkit-text-decoration-line:underline;text-decoration-line:underline}.hover\:shadow-lg:hover{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.hover\:shadow-md:hover{--tw-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.focus\:ring-2:focus{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000)}.focus\:ring-indigo-400:focus{--tw-ring-opacity:1;--tw-ring-color:rgb(129 140 248 / var(--tw-ring-opacity, 1))}.focus\:ring-indigo-500:focus{--tw-ring-opacity:1;--tw-ring-color:rgb(99 102 241 / var(--tw-ring-opacity, 1))}.focus\:ring-orange-500:focus{--tw-ring-opacity:1;--tw-ring-color:rgb(249 115 22 / var(--tw-ring-opacity, 1))}@media (min-width: 768px){.md\:block{display:block}}@media (min-width: 1024px){.lg\:w-1\/3{width:33.333333%}.lg\:w-2\/3{width:66.666667%}.lg\:flex-row{flex-direction:row}}</style><style type="text/css">:root img[width="728"][height="90"], :root [href="https://adstub.net/cina777/"], :root [href="https://adstub.net/arab777/"], :root [href="https://adstub.net/ratu89/"], :root [href="https://adstub.net/judi89/"], :root [href^="//mage98rquewz.com/"], :root [href^="//x4pollyxxpush.com/"], :root span[id^="ezoic-pub-ad-placeholder-"], :root ins.adsbygoogle[data-ad-slot], :root ins.adsbygoogle[data-ad-client], :root img[src^="https://s-img.adskeeper.com/"], :root guj-ad, :root gpt-ad, :root div[id^="zergnet-widget"], :root div[id^="vuukle-ad-"], :root div[id^="taboola-stream-"], :root div[id^="sticky_ad_"], :root div[id^="st"][style^="z-index: 999999999;"], :root div[id^="gpt_ad_"], :root div[id^="ezoic-pub-ad-"], :root div[id^="dfp-ad-"], :root div[id^="crt-"][style], :root div[id^="apn_native_ad_slot_"], :root div[id^="adspot-"], :root div[id^="adrotate_widgets-"], :root ps-connatix-module, :root div[id^="ad_position_"], :root div[id^="ad-div-"], :root div[id*="ScriptRoot"], :root div[id*="MarketGid"], :root [href="https://adstub.net/rusia777/"], :root div[data-id-advertdfpconf], :root div[data-dfp-id], :root hl-adsense, :root div[data-contentexchange-widget], :root div[data-alias="300x250 Ad 2"], :root div[data-adzone], :root div[data-adunit-path], :root div[data-adname], :root div[data-ad-targeting], :root div[data-ad-region], :root div[data-ad-placeholder], :root div[aria-label="Ads"], :root display-ads, :root display-ad-component, :root atf-ad-slot, :root aside[id^="adrotate_widgets-"], :root amp-fx-flying-carpet, :root amp-embed[type="taboola"], :root amp-connatix-player, :root amp-ad-custom, :root amp-ad, :root div[id^="google_dfp_"], :root ad-slot, :root ad-shield-ads, :root a[style="width:100%;height:100%;z-index:10000000000000000;position:absolute;top:0;left:0;"], :root a[onmousedown^="this.href='https://paid.outbrain.com/network/redir?"] + .ob_source, :root a[onclick^="window.location.replace('https://random-affiliate.atimaze.com/"], :root a[href^="https://xbet-4.com/"], :root div[id^="ad-position-"], :root a[href^="https://www.toprevenuegate.com/"], :root a[href^="https://www.purevpn.com/"][href*="&utm_source=aff-"], :root a[href^="https://www.privateinternetaccess.com/"] > img, :root a[href^="https://financeads.net/tc.php?"], :root a[href^="https://www.mrskin.com/tour"], :root a[href^="https://www.infowarsstore.com/"] > img, :root a[href^="https://www.highperformancecpmgate.com/"], :root a[href^="https://www.highcpmrevenuenetwork.com/"], :root a[href^="https://www.get-express-vpn.com/offer/"], :root a[href^="https://lnkxt.bannerator.com/"], :root a[href^="https://www.geekbuying.com/dynamic-ads/"], :root a[href^="https://www.financeads.net/tc.php?"], :root a[href^="https://www.effectiveratecpm.com/"], :root [href^="https://www.herbanomic.com/"] > img, :root a[href^="https://maymooth-stopic.com/"], :root a[href^="https://www.dql2clk.com/"], :root a[href^="https://www.nutaku.net/signup/landing/"], :root a[href^="https://www.dating-finder.com/signup/?ai_d="], :root a[href^="https://explore-site.com/"], :root a[href^="https://www.brazzersnetwork.com/landing/"], :root [data-template-type="nativead"], :root a[href^="https://www.endorico.com/Smartlink/"], :root a[href^="https://www.adultempire.com/"][href*="?partner_id="], :root a[href^="https://voluum.prom-xcams.com/"], :root a[href^="https://twinrdsyte.com/"], :root a[href^="https://twinrdsrv.com/"], :root a[href^="https://trk.nfl-online-streams.club/"], :root a[href^="https://tracking.avapartner.com/"], :root a[href^="https://track.wg-aff.com"], :root a[href^="https://track.ultravpn.com/"], :root a[href^="https://track.afcpatrk.com/"], :root a[href^="https://torguard.net/aff.php"] > img, :root [data-identity="adhesive-ad"], :root a[href^="https://tc.tradetracker.net/"] > img, :root a[href^="https://tatrck.com/"], :root a[href^="https://click.candyoffers.com/"], :root [href^="https://zstacklife.com/"] img, :root a[href^="https://t.aslnk.link/"], :root a[href^="https://t.adating.link/"], :root a[href^="https://go.trackitalltheway.com/"], :root [href^="https://track.fiverr.com/visit/"] > img, :root a[href^="https://syndication.exoclick.com/"], :root a[href^="https://syndication.dynsrvtbg.com/"], :root div[data-alias="300x250 Ad 1"], :root a[href^="https://syndicate.contentsserved.com/"], :root a[href^="https://svb-analytics.trackerrr.com/"], :root a[href^="https://track.aftrk5.com/"], :root a[href^="https://slkmis.com/"], :root a[href^="https://myclick-2.com/"], :root a[href^="https://sexynearme.com/"], :root [data-ad-manager-id], :root a[href^="https://s.zlinkr.com/"], :root bottomadblock, :root a[href^="https://s.zlinkd.com/"], :root [href="https://adstub.net/gaza88/"], :root a[href^="https://ad.doubleclick.net/"], :root a[href^="https://static.fleshlight.com/images/banners/"], :root a[href^="https://s.zlink7.com/"], :root a[href^="https://s.zlink3.com/"], :root a[href^="https://www.mrskin.com/account/"], :root a[href^="https://s.optzsrv.com/"], :root a[href^="https://s.ma3ion.com/"], :root a[href^="https://s.eunow4u.com/"], :root #kt_player > div[style$="display: block;"][style*="inset: 0px;"], :root [href$="/sexdating.php"], :root a[href^="https://quotationfirearmrevision.com/"], :root a[href^="https://pubads.g.doubleclick.net/"], :root a[href^="https://prf.hn/click/"][href*="/camref:"] > img, :root a[href^="https://www.dating-finder.com/?ai_d="], :root a[href^="https://serve.awmdelivery.com/"], :root a[href^="https://prf.hn/click/"][href*="/adref:"] > img, :root app-ad, :root [href^="https://ap.octopuspop.com/click/"] > img, :root a[href^="https://postback1win.com/"], :root a[href^="https://mmwebhandler.aff-online.com/"], :root a[href^="https://www.bet365.com/"][href*="affiliate="], :root a[href^="https://pb-track.com/"], :root a[href^="https://pb-front.com/"], :root a[href^="https://paid.outbrain.com/network/redir?"], :root a[href^="https://streamate.com/landing/click/"], :root div[class^="Adstyled__AdWrapper-"], :root a[href^="https://osfultrbriolenai.info/"], :root a[href^="https://upsups.click/"], :root a[href^="https://ndt5.net/"], :root a[href^="https://natour.naughtyamerica.com/track/"], :root a[href^="https://mediaserver.entainpartners.com/renderBanner.do?"], :root a[href^="https://lead1.pl/"], :root a[href^="https://landing.brazzersnetwork.com/"], :root a[href^="https://join.virtuallust3d.com/"], :root a[href^="https://kiksajex.com/"], :root a[href^="https://juicyads.in/"], :root a[href^="https://snowdayonline.xyz/"], :root a[href^="https://mediaserver.gvcaffiliates.com/renderBanner.do?"], :root a[href^="https://join.dreamsexworld.com/"], :root a[href^="https://join.bannedsextapes.com/track/"], :root a[href^="https://jaxofuna.com/"], :root a[href^="https://italarizege.xyz/"], :root a[href^="https://iqbroker.com/"][href*="?aff="], :root a[href^="https://identicaldrench.com/"], :root a[href^="https://hot-growngames.life/"], :root a[href^="https://helmethomicidal.com/"], :root a[href^="https://golinks.work/"], :root a[href^="https://s.zlinkn.com/"], :root a[href^="https://go.xxxvjmp.com/"], :root a[href^="https://go.xxxjmp.com"], :root [class^="tile-picker__CitrusBannerContainer-sc-"], :root a[href^="https://go.xxxiijmp.com"], :root a[href^="https://go.xtbaffiliates.com/"], :root [data-role="tile-ads-module"], :root a[href^="https://go.xlviirdr.com"], :root div[class$="-adlabel"], :root a[href^="https://go.xlviiirdr.com"], :root a[href^="https://ismlks.com/"], :root [href^="https://www.mypillow.com/"] > img, :root a[href^="https://go.xlirdr.com"], :root [data-css-class="dfp-inarticle"], :root a[href^="https://l.hyenadata.com/"], :root a[href^="https://go.tmrjmp.com"], :root a[href^="https://zirdough.net/"], :root a[href^="https://s.deltraff.com/"], :root a[href^="https://go.markets.com/visit/?bta="], :root a[href^="https://billing.purevpn.com/aff.php"] > img, :root a[href^="https://go.hpyrdr.com/"], :root a[href^="https://lijavaxa.com/"], :root a[href^="https://go.goaserv.com/"], :root a[href^="https://t.hrtye.com/"], :root a[href^="https://go.etoro.com/"] > img, :root a[href^="https://go.dmzjmp.com"], :root a[href^="https://www.bang.com/?aff="], :root #mgb-container > #mgb, :root a[href^="https://go.admjmp.com"], :root a[href^="https://ak.stikroltiltoowi.net/"], :root a[href^="https://get.surfshark.net/aff_c?"][href*="&aff_id="] > img, :root a[href^="https://www.adskeeper.com"], :root a[data-redirect^="https://paid.outbrain.com/network/redir?"], :root [href^="https://clicks.affstrack.com/"] > img, :root a[href^="https://engine.phn.doublepimp.com/"], :root a[href^="https://engine.blueistheneworanges.com/"], :root a[href^="https://drumskilxoa.click/"], :root a[href^="https://dl-protect.net/"], :root a[href*=".foxqck.com/"], :root a[href^="https://ctosrd.com/"], :root a[href^="https://clixtrac.com/"], :root [href^="https://noqreport.com/"] > img, :root a[href^="https://clicks.pipaffiliates.com/"], :root app-advertisement, :root a[href^="https://getmatchedlocally.com/"], :root a[href^="https://clickins.slixa.com/"], :root a[href^="https://datewhisper.life/"], :root a[href^="https://get-link.xyz/"], :root a[href^="https://click.linksynergy.com/fs-bin/"] > img, :root a[href^="https://combodef.com/"], :root a[href^="https://click.hoolig.app/"], :root a[href^="https://www.onlineusershielder.com/"], :root a[href^="https://click.ggpickaff.com/"], :root a[href^="https://track.totalav.com/"], :root a[href^="https://ctrdwm.com/"], :root img[src^="https://images.purevpnaffiliates.com"], :root a[href^="https://porntubemate.com/"], :root a[href^="https://clickadilla.com/"], :root a[href^="https://click.dtiserv2.com/"], :root a[href^="https://www.adxsrve.com/"], :root a[href^="https://click.Ggpickaff.com/"], :root a[href^="https://go.xlvirdr.com"], :root a[href^="http://www.iyalc.com/"], :root a[href^="https://stardomcoit.com/"], :root a[href^="https://claring-loccelkin.com/"], :root a[href^="https://bongacams2.com/track?"], :root a[href^="https://t.ajrkm1.com/"], :root a[href^="https://bongacams10.com/track?"], :root a[href^="https://www.sheetmusicplus.com/"][href*="?aff_id="], :root a[href^="https://bngpt.com/"], :root a[href^="//hoodingluster.com/"], :root a[href^="https://black77854.com/"], :root a[href^="http://annulmentequitycereals.com/"], :root [data-taboola-options], :root a[href^="https://believessway.com/"], :root a[href^="https://Click.ggpickaff.com/"], :root a[href^="https://banners.livepartners.com/"], :root a[href^="http://revolvemockerycopper.com/"], :root a[href^="https://awptjmp.com/"], :root a[href^="https://join.sexworld3d.com/track/"], :root a[href^="https://aweptjmp.com/"], :root a[href^="https://ausoafab.net/"], :root a[href^="https://aj1070.online/"], :root a[href^="https://bc.game/"], :root a[href^="https://ak.oalsauwy.net/"], :root a[href^="https://a.bestcontentoperation.top/"], :root a[href^="https://adultfriendfinder.com/go/"], :root a[href^="https://ads.planetwin365affiliate.com/"], :root a[href^="https://ads.leovegas.com/"], :root .nya-slot[style], :root a[href^="https://a.bestcontentweb.top/"], :root a[href^="https://a2.adform.net/"], :root a[href^="https://a.candyai.love/"], :root a[href^="https://playnano.online/offerwalls/?ref="], :root a[href^="https://a.adtng.com/"], :root .banner-img > .pbl, :root [data-m-ad-id], :root a[href^="https://a-ads.com/"], :root [id^="ad_slider"], :root a[href^="https://click.ggpickyaff.com/"], :root broadstreet-zone-container, :root a[href^="https://ak.psaltauw.net/"], :root a[href^="https://1winpb.com/"], :root div[id^="rc-widget-"], :root a[href^="https://turnstileunavailablesite.com/"], :root a[href^="https://chaturbate.com/in/?"], :root a[href^="https://prf.hn/click/"][href*="/creativeref:"] > img, :root a[href*="&maxads="], :root a[href^="http://www.adultempire.com/unlimited/promo?"][href*="&partner_id="], :root a[href^="https://1betandgonow.com/"], :root div[id^="optidigital-adslot"], :root [href^="https://wsup.ai/"], :root a[href^="https://123-stream.org/"], :root a[href^="https://in.rabbtrk.com/"], :root a[href^="http://www.h4trck.com/"], :root a[href^="http://www.friendlyduck.com/AF_"], :root a[href^="http://partners.etoro.com/"], :root [href="https://chaturbate.jjgirls.com/"] > img, :root a[href^="http://cam4com.go2cloud.org/aff_c?"], :root a[href^="https://ads.betfair.com/redirect.aspx?"], :root a[href^="http://trk.globwo.online/"], :root a[href^="http://troopsassistedstupidity.com/"], :root a[href^="https://random-affiliate.atimaze.com/"], :root a-ad, :root a[href^="https://offhandpump.com/"], :root a[href^="http://stickingrepute.com/"], :root #slashboxes > .deals-rail, :root a[href^="http://join.brokestraightboys.com/track/"], :root a[href^="http://roadcontagion.com/"], :root a[href^="http://premonitioninventdisagree.com/"], :root [href^="http://mypillow.com/"] > img, :root a[href^="http://bongacams.com/track?"], :root a[href^="https://track.adform.net/"], :root a[href^="http://avthelkp.net/"], :root a[href^="https://a.medfoodhome.com/"], :root a[href^="https://engine.flixtrial.com/"], :root [data-type="ad-vertical"], :root a[href^="//startgaming.net/tienda/" i], :root a[href^="https://a.medfoodsafety.com/"], :root a[href^="//go.eabids.com/"], :root a[href^="//ejitsirdosha.net/"], :root a[href^=" https://www.friendlyduck.com/AF_"], :root [data-cl-spot-id], :root a[href*="/jump/next.php?r="], :root a[href^="https://go.rmishe.com/"], :root [href^="https://ilovemyfreedoms.com/landing-"], :root a[href^="https://syndication.optimizesrv.com/"], :root a[href*="//daichoho.com/"], :root a[href^="https://go.nordvpn.net/aff"] > img, :root .\[\&_\.gdprAdTransparencyCogWheelButton\]\:\!pjra-z-\[5\], :root [href^="http://clicks.totemcash.com/"], :root a[href^="https://ad.zanox.com/ppc/"] > img, :root a[href^="https://lone-pack.com/"], :root [data-d-ad-id], :root a[href*=".engine.adglare.net/"], :root a[href^="https://t.ajrkm3.com/"], :root [href^="https://aads.com/campaigns/"], :root a[href^="//stighoazon.com/"], :root div[id^="lazyad-"], :root a[href^="http://com-1.pro/"], :root [href^="https://www.profitablegatecpm.com/"], :root a[href*=".cfm?domain="][href*="&fp="], :root [data-ad-name], :root a[href^="https://loboclick.com/"], :root a[data-url^="https://vulpix.bet/?ref="], :root a[href^="https://ab.advertiserurl.com/aff/"], :root a[data-oburl^="https://paid.outbrain.com/network/redir?"], :root a[href^="https://go.xlivrdr.com"], :root [onclick^="location.href='https://1337x.vpnonly.site/"], :root [id^="section-ad-banner"], :root a[href^="https://www.goldenfrog.com/vyprvpn?offer_id="][href*="&aff_id="], :root a[href^="https://wmctjd.com/"], :root a[href*="//jjgirls.com/sex/Chaturbate"], :root [id^="ad-wrap-"], :root [href^="https://zone.gotrackier.com/"], :root a[href^="http://sarcasmadvisor.com/"], :root [href^="https://www.restoro.com/"], :root [href^="https://www.targetingpartner.com/"], :root .section-subheader > .section-hotel-prices-header, :root [href^="https://www.hostg.xyz/"] > img, :root a[href^="http://adultfriendfinder.com/go/"], :root a[href^="https://fastestvpn.com/lifetime-special-deal?a_aid="], :root a[href^="https://tour.mrskin.com/"], :root [href^="https://www.brighteonstore.com/products/"] img, :root citrus-ad-wrapper, :root a[href^="https://go.grinsbest.com/"], :root a[href^="https://vo2.qrlsx.com/"], :root [href^="https://www.avantlink.com/click.php"] img, :root [href^="https://wwp.hoqodd.com/redirect-zone/"], :root div[id^="div-ads-"], :root [href^="https://rapidgator.net/article/premium/ref/"], :root [href^="https://join.girlsoutwest.com/"], :root a[href^="https://activate-game.com/"], :root .scroll-fixable.rail-right > .deals-rail, :root [data-wpas-zoneid], :root a[href^="https://track.aftrk3.com/"], :root [href^="https://join3.bannedsextapes.com"], :root a[href^="https://bodelen.com/"], :root a[href*=".g2afse.com/"], :root div[id^="adngin-"], :root [data-rc-widget], :root span[data-ez-ph-id], :root [href^="https://track.aftrk1.com/"], :root [href^="https://join.playboyplus.com/track/"], :root a[href^="https://go.xxxijmp.com"], :root [href^="https://istlnkcl.com/"], :root a[href^="https://t.acam.link/"], :root a[href^="https://go.strpjmp.com/"], :root [href^="https://url.totaladblock.com/"], :root a[href^="https://tm-offers.gamingadult.com/"], :root [href^="https://charmingdatings.life/"], :root [href="https://adstub.net/indo666/"], :root [href^="https://glersakr.com/"], :root a[href^="https://a.bestcontentfood.top/"], :root [href^="https://cpa.10kfreesilver.com/"], :root [data-id^="div-gpt-ad"], :root a[href^="https://tracker.loropartners.com/"], :root [href^="https://awbbjmp.com/"], :root div[ow-ad-unit-wrapper], :root a[data-href^="http://ads.trafficjunky.net/"], :root [data-advadstrackid], :root a[href^="https://www.friendlyduck.com/AF_"], :root [href^="https://ad1.adfarm1.adition.com/"], :root a[href^="https://bngprm.com/"], :root [href^="https://shiftnetwork.infusionsoft.com/go/"] > img, :root a[href^="https://go.bushheel.com/"], :root a[href^="https://ctjdwm.com/"], :root a[href^="https://camfapr.com/landing/click/"], :root div[data-ad-wrapper], :root .gnt_em_vp_c[data-g-s="vp_dk"], :root [href="//sexcams.plus/"], :root [href^="http://www.mypillow.com/"] > img, :root a[href^="https://promerycergerful.com/"], :root #kt_player > a[target="_blank"], :root [href="https://ourgoldguy.com/contact/"] img, :root .ob_container .item-container-obpd, :root [id^="div-gpt-ad"], :root [href="https://jdrucker.com/gold"] > img, :root a[href^="https://join.virtualtaboo.com/track/"], :root [id^="ad_sky"], :root [name^="google_ads_iframe"], :root a[href^="https://www.liquidfire.mobi/"], :root .grid > .container > #aside-promotion, :root DFP-AD, :root [href^="https://go.xlrdr.com"], :root a[href^="https://s.cant3am.com/"], :root [data-testid^="taboola-"], :root [data-testid^="section-AdRowBillboard"], :root a[href^="https://track.1234sd123.com/"], :root zeus-ad, :root [data-testid="prism-ad-wrapper"], :root [href^="https://ad.admitad.com/"], :root [href^="https://mypillow.com/"] > img, :root [data-testid="ad_testID"], :root a[href^="https://trk.softonixs.xyz/"], :root [href^="https://www.mypatriotsupply.com/"] > img, :root [href^="https://antiagingbed.com/discount/"] > img, :root a[href*=".adsrv.eacdn.com/"], :root a[href^="https://go.cmtaffiliates.com/"], :root [href^="https://optimizedelite.com/"] > img, :root [data-testid="adBanner-wrapper"], :root [href^="https://mylead.global/stl/"] > img, :root [href^="https://mypatriotsupply.com/"] > img, :root a[href^="https://go.hpyjmp.com"], :root iframe[scrolling="no"][sandbox*="allow-popups allow-modals"][style^="width: 100%; height: 100%; border: none;"], :root [href^="https://mystore.com/"] > img, :root [href^="https://wct.link/click?"], :root div[data-adunit], :root app-large-ad, :root [href^="https://turtlebids.irauctions.com/"] img, :root a[href^="https://witnessjacket.com/"], :root [data-mobile-ad-id], :root [data-dynamic-ads], :root [class^="amp-ad-"], :root a[href^="http://handgripvegetationhols.com/"], :root a[href^="https://go.rmhfrtnd.com"], :root a[href^="https://go.bbrdbr.com"], :root a[href^="https://fc.lc/ref/"], :root [data-adshim], :root topadblock, :root a[href^="//s.zlinkd.com/"], :root #teaser1[style^="width:autopx;"], :root [href^="https://www.cloudways.com/en/?id"], :root [data-asg-ins], :root a[href^="https://gamingadlt.com/?offer="], :root a[href^="https://rixofa.com/"], :root a[href^="https://best-experience-cool.com/"], :root [data-desktop-ad-id], :root [data-adbridg-ad-class], :root #teaser3[style^="width:autopx;"], :root [data-adblockkey], :root [data-block-type="ad"], :root [data-ad-width], :root [onclick*="content.ad/"], :root AMP-AD, :root [data-ad-cls], :root [data-ez-name], :root a[href^="https://go.mnaspm.com/"], :root a[href^="https://service.bv-aff-trx.com/"], :root a[href^="https://6-partner.com/"], :root [class^="s2nPlayer"], :root [href^="https://affiliate.fastcomet.com/"] > img, :root [class^="adDisplay-module"], :root a[href^="https://adclick.g.doubleclick.net/"], :root [data-freestar-ad][id], :root AD-SLOT, :root a[href^="https://www.googleadservices.com/pagead/aclk?"] > img, :root [data-ad-module], :root a[href^="https://go.skinstrip.net"][href*="?campaignId="], :root #teaser2[style^="width:autopx;"], :root [data-revive-zoneid], :root a[href^="https://losingoldfry.com/"], :root div[id^="div-gpt-"], :root a[href^="https://gml-grp.com/"], :root .ob_dual_right > .ob_ads_header ~ .odb_div, :root a[href^="http://tc.tradetracker.net/"] > img, :root [data-testid="commercial-label-taboola"], :root [class^="div-gpt-ad"], :root a[href^="https://traffdaq.com/"], :root a[href^="https://cam4com.go2cloud.org/"], :root a[href^="http://li.blogtrottr.com/click?"], :root a[href^="https://www8.smartadserver.com/"], :root a[href^="https://pb-imc.com/"], :root a[onmousedown^="this.href='https://paid.outbrain.com/network/redir?"], :root a[href^="https://t.ajump1.com/"], :root a[href^="https://wittered-mainging.com/"], :root #teaser3[style="width: 100%;text-align: center;display: scroll;position:fixed;bottom: 0;margin: 0 auto;z-index: 103;"] { display: none !important; }</style></head>
+</head>
 
-  <body class="bg-gray-100 font-sans text-gray-800">
+<body class="bg-gray-100 font-sans text-gray-800">
 
-  <nav class="bg-white shadow-sm px-6 py-4 flex justify-between items-center sticky top-0 z-50 border-b border-gray-200">
+<nav class="bg-white shadow-sm px-6 py-4 flex justify-between items-center sticky top-0 z-50 border-b border-gray-200">
     <div class="flex items-center gap-2">
-      <img src="./InvoiceInAja_files/{{ url_for(&#39;static&#39;, filename=&#39;new1invoiceinaja.png&#39;) }}" class="h-10 w-auto object-contain" alt="Logo Aplikasi" onerror="this.style.display=&#39;none&#39;; document.getElementById(&#39;backupLogo&#39;).classList.remove(&#39;hidden&#39;);" style="display: none;">
-      <div id="backupLogo" class="font-bold">InvoiceInAja</div>
+        <img src="{{ url_for('static', filename='new1invoiceinaja.png') }}" class="h-10 w-auto object-contain" alt="Logo Aplikasi" onerror="this.style.display='none'; document.getElementById('backupLogo').classList.remove('hidden');">
+        <div id="backupLogo" class="hidden font-bold text-indigo-600 text-xl">InvoiceInAja</div>
     </div>
 
     {% if admin %}
-      <a href="https://ppl-ai-file-upload.s3.amazonaws.com/admin" class="bg-gray-600 text-white px-5 py-2 rounded-full text-sm hover:bg-gray-700 font-bold shadow-sm transition">
+      <a href="{{ url_for('admin_page') }}" class="bg-gray-800 text-white px-5 py-2 rounded-full text-sm hover:bg-gray-700 font-bold shadow-sm transition">
         ← Admin Panel
       </a>
     {% else %}
@@ -46,20 +47,19 @@
         {% endif %}
 
         {% if user.id %}
-          <a href="https://ppl-ai-file-upload.s3.amazonaws.com/logout" class="text-sm text-grey-500 hover:text-red-500 font-semibold">
+          <a href="{{ url_for('logout') }}" class="text-sm text-gray-500 hover:text-red-500 font-semibold ml-2">
             <i class="fas fa-sign-out-alt"></i> Logout
           </a>
         {% else %}
-          <a href="https://ppl-ai-file-upload.s3.amazonaws.com/login" class="bg-indigo-600 text-white px-5 py-2 rounded-full text-sm hover:bg-indigo-700 font-bold ml-2 shadow-sm transition">
+          <a href="{{ url_for('login') }}" class="bg-indigo-600 text-white px-5 py-2 rounded-full text-sm hover:bg-indigo-700 font-bold ml-2 shadow-sm transition">
             Masuk / Daftar
           </a>
         {% endif %}
       </div>
     {% endif %}
-  </nav>
+</nav>
 
-  <div class="container mx-auto p-6 flex flex-col lg:flex-row gap-8">
-    <!-- KIRI -->
+<div class="container mx-auto p-6 flex flex-col lg:flex-row gap-8">
     <div class="w-full lg:w-1/3 space-y-6">
 
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
@@ -69,15 +69,15 @@
 
         <div class="space-y-3">
           <label class="flex items-center p-4 border rounded-xl bg-gray-50 border-gray-200 cursor-pointer hover:bg-gray-100 transition">
-            <input type="radio" name="tpl_select" value="basic" checked="" onchange="setTemplate(this.value)" class="mr-4 text-indigo-600 w-5 h-5 focus:ring-indigo-500">
+            <input type="radio" name="tpl_select" value="basic" checked onchange="setTemplate(this.value)" class="mr-4 text-indigo-600 w-5 h-5 focus:ring-indigo-500">
             <div>
               <span class="block font-bold text-sm">Basic</span>
               <span class="text-xs text-green-600 bg-green-100 px-2 py-0.5 rounded-full font-bold">Gratis</span>
             </div>
           </label>
 
-          <label class="relative flex items-center p-4 border rounded-xl transition cursor-pointer hover:bg-indigo-50 border-indigo-200 bg-gray-100 opacity-70">
-            <input type="radio" name="tpl_select" value="modern" {%="" if="" not="" user.is_premium="" %}disabled{%="" endif="" %}="" onchange="setTemplate(this.value)" class="mr-4 text-indigo-600 w-5 h-5 focus:ring-indigo-500">
+          <label class="relative flex items-center p-4 border rounded-xl transition cursor-pointer hover:bg-indigo-50 border-indigo-200 bg-gray-100 {{ 'opacity-100' if user.is_premium else 'opacity-70' }}">
+            <input type="radio" name="tpl_select" value="modern" {% if not user.is_premium %}disabled{% endif %} onchange="setTemplate(this.value)" class="mr-4 text-indigo-600 w-5 h-5 focus:ring-indigo-500">
             <div class="flex-1">
               <span class="block font-bold text-sm text-indigo-900">Modern</span>
               <span class="text-xs text-indigo-600 font-bold flex items-center gap-1"><i class="fas fa-crown"></i> Premium</span>
@@ -87,8 +87,8 @@
             {% endif %}
           </label>
 
-          <label class="relative flex items-center p-4 border rounded-xl transition cursor-pointer hover:bg-orange-50 border-orange-200 bg-gray-100 opacity-70">
-            <input type="radio" name="tpl_select" value="corporate" {%="" if="" not="" user.is_premium="" %}disabled{%="" endif="" %}="" onchange="setTemplate(this.value)" class="mr-4 text-orange-600 w-5 h-5 focus:ring-orange-500">
+          <label class="relative flex items-center p-4 border rounded-xl transition cursor-pointer hover:bg-orange-50 border-orange-200 bg-gray-100 {{ 'opacity-100' if user.is_premium else 'opacity-70' }}">
+            <input type="radio" name="tpl_select" value="corporate" {% if not user.is_premium %}disabled{% endif %} onchange="setTemplate(this.value)" class="mr-4 text-orange-600 w-5 h-5 focus:ring-orange-500">
             <div class="flex-1">
               <span class="block font-bold text-sm text-orange-900">Corporate</span>
               <span class="text-xs text-orange-600 font-bold flex items-center gap-1"><i class="fas fa-crown"></i> Premium</span>
@@ -100,8 +100,7 @@
         </div>
       </div>
 
-      <!-- Kustomisasi Premium -->
-      <div id="premiumSettings" class="bg-white p-6 rounded-2xl shadow-sm border border-indigo-200 {% if not user.is_premium %}opacity-70 pointer-events-none{% endif %}">
+      <div id="premiumSettings" class="bg-white p-6 rounded-2xl shadow-sm border border-indigo-200 transition-all duration-200 {% if not user.is_premium %}opacity-60 pointer-events-none grayscale{% endif %}">
         <div class="flex justify-between items-center mb-4">
           <h3 class="font-bold text-gray-700 flex items-center gap-2">
             <i class="fas fa-cogs text-indigo-500"></i> Kustomisasi Premium
@@ -112,21 +111,19 @@
         </div>
 
         <div class="space-y-6">
-
-          <!-- Logo -->
           <div>
             <label class="block text-sm font-semibold text-gray-600 mb-2">Logo Perusahaan</label>
             <div class="flex items-center gap-4">
               <div class="h-16 w-16 bg-gray-100 border rounded-lg flex items-center justify-center overflow-hidden relative">
                 {% if user.company_logo %}
-                  <img src="./InvoiceInAja_files/&#39; + user.company_logo) }}" id="previewLogo" class="h-full object-contain">
+                  <img src="{{ url_for('static', filename='uploads/' + user.company_logo) }}" id="previewLogo" class="h-full object-contain">
                 {% else %}
                   <i class="fas fa-image text-gray-300 text-2xl" id="noLogoIcon"></i>
+                  <img id="previewLogo" class="h-full object-contain hidden">
                 {% endif %}
               </div>
-
               <div>
-                <input type="file" id="logoIn" class="hidden" accept="image/*" onchange="uploadFile(&#39;logo&#39;)">
+                <input type="file" id="logoIn" class="hidden" accept="image/*" onchange="uploadFile('logo')">
                 <label for="logoIn" class="cursor-pointer bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50 transition font-semibold shadow-sm">
                   Upload Logo
                 </label>
@@ -135,20 +132,19 @@
             </div>
           </div>
 
-          <!-- Signature -->
           <div>
             <label class="block text-sm font-semibold text-gray-600 mb-2">Tanda Tangan Digital</label>
             <div class="flex items-center gap-4">
               <div class="h-12 w-24 bg-gray-100 border rounded-lg flex items-center justify-center overflow-hidden relative">
                 {% if user.signature_file %}
-                  <img src="./InvoiceInAja_files/&#39; + user.signature_file) }}" id="previewSig" class="h-full object-contain">
+                  <img src="{{ url_for('static', filename='uploads/' + user.signature_file) }}" id="previewSig" class="h-full object-contain">
                 {% else %}
                   <i class="fas fa-file-signature text-gray-300 text-xl" id="noSigIcon"></i>
+                  <img id="previewSig" class="h-full object-contain hidden">
                 {% endif %}
               </div>
-
               <div>
-                <input type="file" id="sigIn" class="hidden" accept="image/*" onchange="uploadFile(&#39;signature&#39;)">
+                <input type="file" id="sigIn" class="hidden" accept="image/*" onchange="uploadFile('signature')">
                 <label for="sigIn" class="cursor-pointer bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50 transition font-semibold shadow-sm">
                   Upload TTD
                 </label>
@@ -157,76 +153,61 @@
             </div>
           </div>
 
-          <!-- Address -->
           <div>
-            <label class="block text-sm font-semibold text-gray-600 mb-2">Alamat &amp; Kontak Pencetak</label>
-            <textarea id="addressIn" rows="3" class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none transition text-sm resize-none" placeholder="Contoh: Jl. Sudirman No. 1, Jakarta. Telp 021-123456">{{ user.company_address or '' }}</textarea>
+            <label class="block text-sm font-semibold text-gray-600 mb-2">Alamat &amp; Kontak</label>
+            <textarea id="addressIn" rows="3" class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none transition text-sm resize-none" placeholder="Contoh: Jl. Sudirman No. 1, Jakarta">{{ user.company_address or '' }}</textarea>
             <button type="button" onclick="updateAddress()" class="mt-2 text-indigo-600 text-sm font-semibold hover:underline">
               Simpan Alamat
             </button>
           </div>
 
-          <!-- Profile Invoice -->
-          <div class="pt-2 border-t border-gray-200">
-            <label class="block text-sm font-semibold text-gray-600 mb-2">Profil Invoice (Header &amp; Tanda Tangan)</label>
+          <div class="pt-4 border-t border-gray-200">
+            <label class="block text-sm font-semibold text-gray-600 mb-3">Detail Profil Invoice</label>
             <div class="space-y-3">
               <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Nama Perusahaan</label>
-                <input id="companyNameIn" type="text" class="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none transition text-sm" value="{{ user.company_name or (user.username + &#39; CORP.&#39;) }}">
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Nama Perusahaan (Header)</label>
+                <input id="companyNameIn" type="text" class="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none transition text-sm" value="{{ user.company_name or (user.username + ' CORP.') }}">
               </div>
-
               <div>
                 <label class="block text-xs font-semibold text-gray-500 mb-1">Nama Penanda Tangan</label>
                 <input id="sigNameIn" type="text" class="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none transition text-sm" value="{{ user.signature_name or user.username }}">
               </div>
-
               <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Jabatan / Title</label>
-                <input id="sigTitleIn" type="text" class="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none transition text-sm" value="{{ user.signature_title or &#39;Authorized Signature&#39; }}">
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Jabatan</label>
+                <input id="sigTitleIn" type="text" class="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none transition text-sm" value="{{ user.signature_title or 'Authorized Signature' }}">
               </div>
-
-              <button type="button" onclick="saveInvoiceProfile()" class="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 transition shadow">
-                Simpan Profil Invoice
+              <button type="button" onclick="saveInvoiceProfile()" class="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-700 transition shadow mt-2">
+                Simpan Profil
               </button>
-
-              <p class="text-xs text-gray-400">
-                Profil ini dipakai untuk template Modern &amp; Corporate (header perusahaan + blok tanda tangan).
-              </p>
             </div>
           </div>
-
         </div>
       </div>
 
-      <!-- Warna + judul header -->
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-semibold text-gray-600 mb-1">Warna Background</label>
+            <label class="block text-sm font-semibold text-gray-600 mb-1">Background</label>
             <input type="color" id="bgColorPicker" value="#ffffff" class="w-full h-10 p-1 rounded cursor-pointer border">
           </div>
           <div>
-            <label class="block text-sm font-semibold text-gray-600 mb-1">Warna Garis/Aksen</label>
+            <label class="block text-sm font-semibold text-gray-600 mb-1">Aksen/Garis</label>
             <input type="color" id="lineColorPicker" value="#000000" class="w-full h-10 p-1 rounded cursor-pointer border">
           </div>
         </div>
-
         <div class="mt-4">
-          <label class="block text-sm font-semibold text-gray-600 mb-1">Judul Header Invoice</label>
+          <label class="block text-sm font-semibold text-gray-600 mb-1">Judul Invoice</label>
           <input type="text" id="headerTitleInput" value="INVOICE" class="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none transition text-sm">
         </div>
       </div>
-
     </div>
 
-    <!-- KANAN -->
     <div class="w-full lg:w-2/3 bg-white p-8 rounded-2xl shadow-sm border border-gray-200 h-fit">
       <h2 class="text-2xl font-bold mb-6 text-gray-800 border-b pb-4 flex items-center gap-3">
         <i class="fas fa-file-invoice text-indigo-600"></i> Buat Invoice
       </h2>
 
-      <form action="https://ppl-ai-file-upload.s3.amazonaws.com/generate-invoice" method="POST" target="_blank" id="invoiceForm">
-        <!-- hidden yg diisi sebelum submit -->
+      <form action="{{ url_for('generate_invoice') }}" method="POST" target="_blank" id="invoiceForm">
         <input type="hidden" name="template" id="finalTemplate" value="basic">
         <input type="hidden" name="bgcolor" id="finalBgColor" value="ffffff">
         <input type="hidden" name="linecolor" id="finalLineColor" value="000000">
@@ -234,13 +215,13 @@
 
         <div class="mb-8">
           <label class="block font-bold text-sm mb-2 text-gray-700">Kepada Yth. (Pelanggan)</label>
-          <input type="text" name="customername" required="" class="w-full border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-indigo-400 outline-none transition text-gray-700 placeholder-gray-400" placeholder="Nama Perusahaan Pelanggan">
+          <input type="text" name="customername" required class="w-full border border-gray-300 p-3 rounded-xl focus:ring-2 focus:ring-indigo-400 outline-none transition text-gray-700 placeholder-gray-400" placeholder="Nama Perusahaan / Pelanggan">
         </div>
 
         <div class="mb-4">
           <div class="flex justify-between items-center mb-2">
             <label class="block font-bold text-sm text-gray-700">Daftar Item</label>
-            <span class="text-xs text-gray-500" id="itemCount">Maksimal 10 Item</span>
+            <span class="text-xs text-gray-500" id="itemCount">Item: 1/10</span>
           </div>
 
           <div class="overflow-x-auto border rounded-xl">
@@ -253,7 +234,22 @@
                   <th class="p-3 w-14 text-center"></th>
                 </tr>
               </thead>
-              <tbody id="items" class="divide-y divide-gray-100 bg-white"></tbody>
+              <tbody id="items" class="divide-y divide-gray-100 bg-white">
+                <tr class="hover:bg-gray-50 transition">
+                   <td class="p-2">
+                     <input type="text" name="itemname" class="w-full p-2 border rounded-lg focus:border-indigo-400 outline-none" placeholder="Contoh: Jasa Desain" required>
+                   </td>
+                   <td class="p-2">
+                     <input type="number" name="itemqty" value="1" min="1" class="w-full p-2 border rounded-lg text-center focus:border-indigo-400 outline-none" required>
+                   </td>
+                   <td class="p-2">
+                     <input type="number" name="itemprice" min="0" class="w-full p-2 border rounded-lg text-right focus:border-indigo-400 outline-none" placeholder="0" required>
+                   </td>
+                   <td class="p-2 text-center">
+                     <button type="button" disabled class="text-gray-300 cursor-not-allowed"><i class="fas fa-trash-alt"></i></button>
+                   </td>
+                </tr>
+              </tbody>
             </table>
           </div>
         </div>
@@ -269,435 +265,205 @@
         </div>
       </form>
     </div>
+</div>
 
-  </div>
-
-  <!-- Modal Konfirmasi Premium -->
-  <div id="premiumModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all">
-      <!-- Header -->
-      <div class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-6 rounded-t-2xl">
-        <div class="flex items-center gap-3">
-          <i class="fas fa-crown text-3xl"></i>
-          <div>
-            <h3 class="text-xl font-bold">Upgrade ke Premium</h3>
-            <p class="text-sm opacity-90">Dapatkan akses fitur lengkap</p>
-          </div>
+<div id="premiumModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all scale-100">
+    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-6 rounded-t-2xl">
+      <div class="flex items-center gap-3">
+        <i class="fas fa-crown text-3xl"></i>
+        <div>
+          <h3 class="text-xl font-bold">Upgrade Premium</h3>
+          <p class="text-sm opacity-90">Buka semua fitur terkunci!</p>
         </div>
-      </div>
-
-      <!-- Body -->
-      <div class="p-6 space-y-4">
-        <!-- Detail Paket -->
-        <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
-          <div class="flex justify-between items-center mb-3">
-            <span class="text-gray-600 font-semibold">Paket Premium</span>
-            <span class="text-2xl font-bold text-indigo-600">Rp 50.000</span>
-          </div>
-          <div class="text-sm text-gray-500 border-t pt-3 mt-2">
-            <p class="flex items-center gap-2 mb-1">
-              <i class="fas fa-check-circle text-green-500"></i>
-              Durasi: <strong>30 Hari</strong>
-            </p>
-          </div>
-        </div>
-
-        <!-- Fitur Premium -->
-        <div class="space-y-2">
-          <p class="font-semibold text-gray-700 text-sm flex items-center gap-2">
-            <i class="fas fa-gift text-indigo-500"></i> Fitur yang Anda dapatkan:
-          </p>
-          <ul class="text-sm text-gray-600 space-y-2 ml-6">
-            <li class="flex items-start gap-2">
-              <i class="fas fa-check text-green-500 mt-0.5"></i>
-              <span>Template <strong>Modern</strong> &amp; <strong>Corporate</strong></span>
-            </li>
-            <li class="flex items-start gap-2">
-              <i class="fas fa-check text-green-500 mt-0.5"></i>
-              <span>Upload Logo &amp; Tanda Tangan Digital</span>
-            </li>
-            <li class="flex items-start gap-2">
-              <i class="fas fa-check text-green-500 mt-0.5"></i>
-              <span>Kustomisasi Alamat &amp; Profil Invoice</span>
-            </li>
-            <li class="flex items-start gap-2">
-              <i class="fas fa-check text-green-500 mt-0.5"></i>
-              <span>Support prioritas &amp; update gratis</span>
-            </li>
-          </ul>
-        </div>
-
-        <!-- Payment Method Info -->
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
-          <i class="fas fa-info-circle"></i> 
-          Pembayaran aman melalui <strong>Midtrans</strong> (BCA, Mandiri, GoPay, OVO, dll.)
-        </div>
-      </div>
-
-      <!-- Footer Buttons -->
-      <div class="p-6 pt-0 flex gap-3">
-        <button onclick="closePremiumModal()" class="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-red-50 transition">
-          <i class="fas"></i> Batal
-        </button>
-        <button onclick="processPremiumPayment()" class="flex-1 px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg transition transform hover:-translate-y-0.5">
-          <i class="fas"></i> Bayar Sekarang
-        </button>
       </div>
     </div>
+    <div class="p-6 space-y-4">
+      <div class="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
+        <div class="flex justify-between items-center">
+          <span class="text-gray-700 font-bold">Harga Spesial</span>
+          <span class="text-2xl font-bold text-indigo-700">Rp 50.000</span>
+        </div>
+        <p class="text-xs text-indigo-500 mt-1">Berlaku selama 30 hari</p>
+      </div>
+      <ul class="text-sm text-gray-600 space-y-2">
+        <li class="flex items-center gap-2"><i class="fas fa-check text-green-500"></i> Template Modern & Corporate</li>
+        <li class="flex items-center gap-2"><i class="fas fa-check text-green-500"></i> Hapus Watermark</li>
+        <li class="flex items-center gap-2"><i class="fas fa-check text-green-500"></i> Upload Logo & Tanda Tangan</li>
+      </ul>
+    </div>
+    <div class="p-6 pt-0 flex gap-3">
+      <button onclick="closePremiumModal()" class="flex-1 py-3 border border-gray-300 rounded-xl font-bold text-gray-600 hover:bg-gray-50">Batal</button>
+      <button onclick="processPayment()" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 shadow-lg">Bayar Sekarang</button>
+    </div>
   </div>
+</div>
 
-  <script>
-    let itemCount = 0;
+<script>
+    let itemCount = 1;
     const MAX_ITEMS = 10;
+    let snapToken = null;
 
-    window.onload = function () {
-      addItem();
-      updateItemCountDisplay();
-    };
-
-    function updateItemCountDisplay() {
-      document.getElementById("itemCount").innerText = `Item: ${itemCount}/${MAX_ITEMS}`;
-      const disabled = itemCount >= MAX_ITEMS;
-      document.getElementById("btnAddItem").disabled = disabled;
-      document.getElementById("btnAddItem").classList.toggle("opacity-50", disabled);
-      document.getElementById("btnAddItem").classList.toggle("cursor-not-allowed", disabled);
+    // --- LOGIC ITEM INVOICE ---
+    function updateItemCount() {
+        document.getElementById("itemCount").innerText = `Item: ${itemCount}/${MAX_ITEMS}`;
+        const btn = document.getElementById("btnAddItem");
+        if (itemCount >= MAX_ITEMS) {
+            btn.classList.add("opacity-50", "cursor-not-allowed");
+            btn.disabled = true;
+        } else {
+            btn.classList.remove("opacity-50", "cursor-not-allowed");
+            btn.disabled = false;
+        }
     }
 
     function addItem() {
-      if (itemCount >= MAX_ITEMS) {
-        alert("Maksimal 10 item per invoice.");
-        return;
-      }
-      const tr = document.createElement("tr");
-      tr.className = "hover:bg-gray-50 transition";
-      tr.innerHTML = `
-        <td class="p-2">
-          <input type="text" name="itemname"
-                class="w-full p-2 border rounded-lg focus:border-indigo-400 outline-none placeholder:opacity-60"
-                placeholder="Contoh: Jasa Desain" required>
-        </td>
-        <td class="p-2">
-          <input type="number" name="itemqty" value="1" min="1"
-                class="w-full p-2 border rounded-lg text-center focus:border-indigo-400 outline-none"
-                required>
-        </td>
-        <td class="p-2">
-          <input type="number" name="itemprice" value="" min="1"
-                class="w-full p-2 border rounded-lg text-right focus:border-indigo-400 outline-none placeholder:opacity-60"
-                placeholder="0" required onchange="validatePrice(this)">
-        </td>
-        <td class="p-2 text-center">
-          <button type="button" onclick="removeItem(this)"
-                  class="text-red-400 hover:text-red-600 transition p-1 rounded hover:bg-red-50"
-                  title="Hapus">
-            <i class="fas fa-trash-alt"></i>
-          </button>
-        </td>`;
-      document.getElementById("items").appendChild(tr);
-      itemCount++;
-      updateItemCountDisplay();
+        if (itemCount >= MAX_ITEMS) return;
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-gray-50 transition";
+        tr.innerHTML = `
+            <td class="p-2"><input type="text" name="itemname" class="w-full p-2 border rounded-lg focus:border-indigo-400 outline-none" required></td>
+            <td class="p-2"><input type="number" name="itemqty" value="1" min="1" class="w-full p-2 border rounded-lg text-center focus:border-indigo-400 outline-none" required></td>
+            <td class="p-2"><input type="number" name="itemprice" min="0" class="w-full p-2 border rounded-lg text-right focus:border-indigo-400 outline-none" placeholder="0" required></td>
+            <td class="p-2 text-center"><button type="button" onclick="removeItem(this)" class="text-red-400 hover:text-red-600"><i class="fas fa-trash-alt"></i></button></td>
+        `;
+        document.getElementById("items").appendChild(tr);
+        itemCount++;
+        updateItemCount();
     }
 
     function removeItem(btn) {
-      btn.closest("tr").remove();
-      itemCount--;
-      updateItemCountDisplay();
+        btn.closest("tr").remove();
+        itemCount--;
+        updateItemCount();
     }
 
-    function validatePrice(input) {
-      if (parseInt(input.value || "0", 10) <= 0) {
-        alert("Harga tidak boleh 0 atau negatif!");
-        input.value = "";
-        input.focus();
-      }
-    }
-
+    // --- LOGIC TEMPLATE & FORM ---
     function setTemplate(val) {
-      document.getElementById("finalTemplate").value = val;
-
-      const premiumSettings = document.getElementById("premiumSettings");
-      const isPremium = {{ 'true' if user.is_premium else 'false' }};
-
-      if (val === "basic") {
-        return;
-      }
-
-      if (!isPremium) {
-        alert("Template ini khusus Premium. Silakan upgrade.");
-        document.querySelector("input[name='tpl_select'][value='basic']").checked = true;
-        setTemplate("basic");
-        return;
-      }
+        const isPremium = {{ 'true' if user.is_premium else 'false' }};
+        if (val !== 'basic' && !isPremium) {
+            alert("Fitur ini khusus Premium!");
+            document.querySelector(`input[value="basic"]`).checked = true;
+            return;
+        }
+        document.getElementById("finalTemplate").value = val;
     }
 
-    function syncHiddenFields() {
-      document.getElementById("finalBgColor").value = (document.getElementById("bgColorPicker").value || "#ffffff").replace("#", "");
-      document.getElementById("finalLineColor").value = (document.getElementById("lineColorPicker").value || "#000000").replace("#", "");
-      document.getElementById("finalHeaderTitle").value = document.getElementById("headerTitleInput").value || "INVOICE";
+    function submitInvoice() {
+        // Sync nilai warna dan judul ke hidden input
+        document.getElementById("finalBgColor").value = document.getElementById("bgColorPicker").value.replace("#", "");
+        document.getElementById("finalLineColor").value = document.getElementById("lineColorPicker").value.replace("#", "");
+        document.getElementById("finalHeaderTitle").value = document.getElementById("headerTitleInput").value;
+        
+        // Submit form
+        document.getElementById("invoiceForm").submit();
     }
 
-    async function submitInvoice() {
-      const form = document.getElementById("invoiceForm");
-      if (!form.reportValidity()) return;
-      
-      syncHiddenFields();
-      const fd = new FormData(form);
-      
-      console.log("=== SENDING INVOICE DATA ===");
-      for (let [key, value] of fd.entries()) {
-          console.log(`${key}: ${value}`);
-      }
-      
-      try {
-          const res = await fetch("/generate-invoice", {
-              method: "POST",
-              body: fd
-          });
-          
-          console.log("Response status:", res.status);
-          
-          if (!res.ok) {
-              const errorText = await res.text();
-              console.error("Error response:", errorText);
-              alert(`Gagal generate invoice. Status: ${res.status}\n${errorText}`);
-              return;
-          }
-          
-          const html = await res.text();
-          const w = window.open("", "_blank");
-          w.document.open();
-          w.document.write(html);
-          w.document.close();
-          
-      } catch (e) {
-          console.error("Fetch error:", e);
-          alert("Gagal mengirim data invoice. Cek console browser untuk detail.");
-      }
-    }
-
+    // --- UPLOAD AJAX ---
     async function uploadFile(type) {
-      const fileInput = document.getElementById(type === "logo" ? "logoIn" : "sigIn");
-      const file = fileInput.files[0];
-      if (!file) return;
+        const input = document.getElementById(type === 'logo' ? 'logoIn' : 'sigIn');
+        const file = input.files[0];
+        if (!file) return;
 
-      const formData = new FormData();
-      formData.append(type, file);
+        const formData = new FormData();
+        formData.append(type, file);
 
-      const previewId = (type === "logo") ? "previewLogo" : "previewSig";
-      const iconId = (type === "logo") ? "noLogoIcon" : "noSigIcon";
-      const preview = document.getElementById(previewId);
-      const icon = document.getElementById(iconId);
-
-      if (preview) preview.style.opacity = 0.5;
-
-      try {
-        const endpoint = (type === "logo") ? "/upload-logo" : "/upload-signature";
-        const res = await fetch(endpoint, { method: "POST", body: formData });
-
-        if (res.status === 401 || res.status === 403) {
-          alert("Sesi habis atau akses ditolak.");
-          return;
+        try {
+            const res = await fetch(type === 'logo' ? '/upload-logo' : '/upload-signature', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                const url = "/static/uploads/" + data.filename;
+                const preview = document.getElementById(type === 'logo' ? 'previewLogo' : 'previewSig');
+                const icon = document.getElementById(type === 'logo' ? 'noLogoIcon' : 'noSigIcon');
+                
+                if(icon) icon.classList.add('hidden');
+                preview.src = url;
+                preview.classList.remove('hidden');
+                alert("Berhasil upload!");
+            } else {
+                alert(data.error || "Gagal upload");
+            }
+        } catch (e) {
+            alert("Error koneksi");
         }
-
-        const data = await res.json();
-        if (data.success) {
-          const url = `/static/uploads/${data.filename}`;
-          if (preview) {
-            preview.src = url;
-            preview.style.opacity = 1;
-          } else {
-            if (icon) icon.remove();
-            const newImg = document.createElement("img");
-            newImg.id = previewId;
-            newImg.src = url;
-            newImg.className = "h-full object-contain";
-            fileInput.parentElement.parentElement.querySelector("div").appendChild(newImg);
-          }
-          alert(type === "logo" ? "Logo berhasil diupdate!" : "Tanda tangan berhasil diupdate!");
-        } else {
-          alert(data.error || "Upload gagal.");
-        }
-      } catch (e) {
-        console.error(e);
-        alert("Gagal koneksi ke server.");
-      }
     }
 
+    // --- PROFILE UPDATE AJAX ---
     async function updateAddress() {
-      const address = document.getElementById("addressIn").value;
-
-      try {
-        const res = await fetch("/update-address", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ address: address })
+        const addr = document.getElementById("addressIn").value;
+        await fetch('/update-address', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({address: addr})
         });
-
-        if (res.ok) alert("Alamat berhasil disimpan!");
-        else alert("Gagal menyimpan alamat.");
-      } catch (e) {
-        alert("Error koneksi.");
-      }
+        alert("Alamat tersimpan");
     }
 
     async function saveInvoiceProfile() {
-      const companyName = document.getElementById("companyNameIn").value || "";
-      const signatureName = document.getElementById("sigNameIn").value || "";
-      const signatureTitle = document.getElementById("sigTitleIn").value || "";
-
-      try {
-        const res = await fetch("/premium/profile", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            company_name: companyName,
-            signature_name: signatureName,
-            signature_title: signatureTitle
-          })
+        const data = {
+            company_name: document.getElementById("companyNameIn").value,
+            signature_name: document.getElementById("sigNameIn").value,
+            signature_title: document.getElementById("sigTitleIn").value
+        };
+        await fetch('/premium/profile', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
         });
-
-        if (res.status === 401 || res.status === 403) {
-          alert("Sesi habis atau akses ditolak.");
-          return;
-        }
-
-        const data = await res.json().catch(() => ({}));
-        if (res.ok && (data.success === undefined || data.success === true)) {
-          alert("Profil invoice berhasil disimpan!");
-        } else {
-          alert(data.error || "Gagal menyimpan profil invoice.");
-        }
-      } catch (e) {
-        console.error(e);
-        alert("Error koneksi.");
-      }
+        alert("Profil Invoice tersimpan");
     }
 
-    // Function untuk membuka modal konfirmasi
+    // --- PAYMENT MIDTRANS ---
     async function goPremium() {
-      try {
-        const res = await fetch("/get-payment-token", { method: "POST" });
-
-        if (res.status === 401) {
-          if (confirm("Mode Tamu. Lanjut ke Login untuk upgrade?")) {
-            window.location.href = "/login";
-          }
-          return;
-        }
-
-        if (res.status === 403) {
-          alert("Anda sudah Premium!");
-          return;
-        }
-
-        const data = await res.json();
-        
-        if (data.error) {
-          alert(data.error);
-          return;
-        }
-
-        // Simpan token untuk digunakan nanti
-        window.paymentToken = data.token;
-        
-        // Tampilkan modal konfirmasi
-        document.getElementById("premiumModal").classList.remove("hidden");
-
-      } catch (e) {
-        console.error(e);
-        alert("Error koneksi ke server.");
-      }
-    }
-
-    // Function untuk menutup modal
-    function closePremiumModal() {
-      document.getElementById("premiumModal").classList.add("hidden");
-      window.paymentToken = null; // Hapus token
-    }
-
-    // Function untuk proses pembayaran setelah konfirmasi
-    function processPremiumPayment() {
-    console.log("=== PROCESS PAYMENT CLICKED ===");
-    
-    if (!window.paymentToken) {
-      alert("Token pembayaran tidak valid. Silakan coba lagi.");
-      closePremiumModal();
-      return;
-    }
-
-    console.log("Payment token:", window.paymentToken);
-
-    // PENTING: Validasi Snap loaded
-    if (typeof window.snap === 'undefined') {
-      console.error("ERROR: Snap.js not loaded!");
-      alert("❌ Payment gateway belum siap. Refresh halaman (F5) dan coba lagi.");
-      closePremiumModal();
-      return;
-    }
-
-    console.log("Snap.js loaded successfully");
-
-    // Tutup modal
-    closePremiumModal();
-
-    // Proses pembayaran via Midtrans Snap
-    try {
-      console.log("Calling snap.pay()...");
-      
-      window.snap.pay(window.paymentToken, {
-        onSuccess: async function (result) {
-          console.log("✅ Payment success:", result);
-          try {
-            const res = await fetch("/payment-success", { 
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ order_id: result.order_id })
-            });
-            
-            if (res.ok) {
-              alert("✅ Upgrade Berhasil! Selamat menikmati fitur Premium.");
-              location.reload();
-            } else {
-              alert("Pembayaran berhasil tapi gagal update status. Refresh halaman.");
-              location.reload();
+        try {
+            const res = await fetch('/get-payment-token', { method: 'POST' });
+            if (res.status === 401) {
+                window.location.href = "/login";
+                return;
             }
-          } catch (e) {
-            console.error("Error updating payment status:", e);
-            alert("Pembayaran berhasil. Refresh halaman untuk melihat perubahan.");
-            location.reload();
-          }
-        },
-        
-        onPending: function (result) {
-          console.log("⏳ Payment pending:", result);
-          alert("⏳ Pembayaran sedang diproses. Cek email/notifikasi Anda.");
-        },
-        
-        onError: function (result) {
-          console.error("❌ Payment error:", result);
-          alert("❌ Pembayaran gagal: " + (result.status_message || "Silakan coba lagi"));
-        },
-        
-        onClose: function () {
-          console.log("Payment popup closed by user");
+            const data = await res.json();
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+            snapToken = data.token;
+            document.getElementById("premiumModal").classList.remove("hidden");
+        } catch (e) {
+            alert("Gagal menghubungi server pembayaran");
         }
-      });
-      
-    } catch (e) {
-      console.error("EXCEPTION calling snap.pay:", e);
-      alert("❌ Gagal membuka payment gateway: " + e.message);
     }
-  }
 
-    // Tutup modal jika klik di luar
-    document.addEventListener('click', function(event) {
-      const modal = document.getElementById('premiumModal');
-      if (event.target === modal) {
+    function closePremiumModal() {
+        document.getElementById("premiumModal").classList.add("hidden");
+    }
+
+    function processPayment() {
+        if (!snapToken) return;
         closePremiumModal();
-      }
-    });
-  </script>
+        
+        window.snap.pay(snapToken, {
+            onSuccess: async function(result) {
+                await fetch('/payment-success', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(result)
+                });
+                alert("Pembayaran Berhasil! Halaman akan dimuat ulang.");
+                window.location.reload();
+            },
+            onPending: function(result) {
+                alert("Menunggu pembayaran...");
+            },
+            onError: function(result) {
+                alert("Pembayaran gagal!");
+            }
+        });
+    }
+</script>
 
-
-
-  <iframe src="./InvoiceInAja_files/popup.html" id="snap-midtrans" name="popup_1767044561994" style="display: none;"></iframe></body></html>
+</body>
+</html>
