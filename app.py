@@ -36,10 +36,6 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 # [FIX] Middleware ProxyFix untuk Azure
-# Setting ini memberitahu Flask untuk mempercayai header dari Load Balancer Azure
-# x_proto=1: Mengatasi http vs https (Google Login Error)
-# x_host=1: Mengatasi nama domain
-# x_for=1 & x_prefix=1: Tambahan untuk kestabilan di Azure Linux
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 app.secret_key = "rahasia_lokal_123"
@@ -63,8 +59,7 @@ os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 db = SQLAlchemy(app)
 
-# --- KONFIGURASI MIDTRANS (SANDBOX) ---
-# Sesuai dengan screenshot Anda sebelumnya
+# --- KONFIGURASI MIDTRANS ---
 MIDTRANS_SERVER_KEY = "Mid-server-JEHBUtBFFwcJ8Sw8GypuXrQZ"
 MIDTRANS_CLIENT_KEY = "Mid-client-wXRT3UdSUW4t95P6"
 
@@ -107,6 +102,7 @@ class User(db.Model):
 
 class PageVisit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    # Penting: Simpan waktu dalam UTC agar konsisten di cloud
     ts = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     path = db.Column(db.String(255), nullable=False)
     user_id = db.Column(db.Integer, nullable=True)
@@ -139,6 +135,12 @@ def get_current_user():
     if not uid: return None
     return User.query.get(uid)
 
+def require_admin_user():
+    u = get_current_user()
+    if not u or not getattr(u, "is_admin", False):
+        return None
+    return u
+
 # --- ROUTES ---
 
 @app.route("/")
@@ -147,54 +149,57 @@ def index():
 
 @app.route("/admin")
 def admin_page():
-    # 1. Cek Admin
-    user_id = session.get("user_id")
-    if not user_id: return redirect(url_for("login"))
-    
-    user = User.query.get(user_id)
-    if not user or not user.is_admin:
-        return redirect(url_for("dashboard"))
+    # 1. Cek User Admin
+    admin = require_admin_user()
+    if not admin:
+        return redirect(url_for("login", next=request.path))
 
-    # --- [FIX] LOGIKA TIMEZONE UNTUK GRAFIK ---
-    
-    # A. Grafik Pengunjung (7 Hari Terakhir)
-    now_utc = datetime.utcnow()
-    start_date = now_utc - timedelta(days=7)
-    
+    # --- BAGIAN 2: GRAFIK PENGUNJUNG (7 HARI) ---
+    # Gunakan utcnow agar konsisten dengan server cloud
+    start_date = datetime.utcnow() - timedelta(days=7)
     visit_rows = db.session.query(
         func.date(PageVisit.ts).label("d"),
         func.count(PageVisit.id).label("c"),
-    ).filter(PageVisit.ts >= start_date).group_by(func.date(PageVisit.ts)).all()
+    ).filter(PageVisit.ts >= start_date).group_by(
+        func.date(PageVisit.ts)
+    ).order_by(func.date(PageVisit.ts)).all()
 
     labels = [str(r.d) for r in visit_rows]
     data_visits = [int(r.c) for r in visit_rows]
     total_visits = sum(data_visits)
 
-    # B. Grafik Input Invoice (HARI INI - WIB)
-    # Server Azure pakai UTC. Kita perlu geser waktu agar sesuai "Hari Ini" di Indonesia (WIB)
+    # --- BAGIAN 3 [PERBAIKAN TOTAL]: GRAFIK INPUT INVOICE (WIB / REALTIME) ---
     
+    # Ambil waktu sekarang (UTC) dan ubah ke WIB (+7 Jam)
+    now_utc = datetime.utcnow()
     now_wib = now_utc + timedelta(hours=7)
-    today_wib_start = now_wib.replace(hour=0, minute=0, second=0, microsecond=0)
-    query_start_utc = today_wib_start - timedelta(hours=7)
+    
+    # Tentukan awal hari ini dalam WIB (Jam 00:00:00 WIB)
+    today_start_wib = now_wib.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # Konversi balik ke UTC untuk filter database (karena DB simpan UTC)
+    # Ini memastikan input jam 01:00 WIB (yang di DB tercatat jam 18:00 kemarin UTC) tetap terambil
+    filter_start_utc = today_start_wib - timedelta(hours=7)
 
+    # Query Database
     input_rows = db.session.query(PageVisit.ts).filter(
-        PageVisit.ts >= query_start_utc,
+        PageVisit.ts >= filter_start_utc,
         PageVisit.path == '/generate-invoice'
     ).all()
 
+    # Masukkan ke Array Jam (0-23) dengan Konversi WIB
     input_data = [0] * 24
-    
     for r in input_rows:
-        # Konversi UTC ke WIB untuk tampilan
-        log_time_wib = r.ts + timedelta(hours=7)
-        hour_index = log_time_wib.hour
+        # Ambil waktu DB (UTC), tambah 7 jam biar jadi WIB untuk ditampilkan di grafik
+        local_time = r.ts + timedelta(hours=7)
+        hour_index = local_time.hour
         if 0 <= hour_index < 24:
             input_data[hour_index] += 1
 
     input_labels = [f"{i:02d}:00" for i in range(24)]
     total_inputs = sum(input_data)
 
-    # C. Tabel User (Pagination)
+    # --- BAGIAN 4: TABEL USER ---
     sort = request.args.get("sort", "expiry")
     direction = request.args.get("dir", "asc")
     page = int(request.args.get("page", 1))
@@ -203,38 +208,42 @@ def admin_page():
     q = User.query
     if sort == "id":
         q = q.order_by(User.id.asc() if direction == "asc" else User.id.desc())
-    else: 
-        q = q.order_by(User.premium_expiry.asc() if direction == "asc" else User.premium_expiry.desc())
+    else:
+        q = q.order_by(
+            User.premium_expiry.asc() if direction == "asc"
+            else User.premium_expiry.desc()
+        )
 
     pagination = q.paginate(page=page, per_page=per_page, error_out=False)
+    users = pagination.items
     
-    row_data = []
-    for u in pagination.items:
+    now = datetime.now()
+    rows = []
+    for u in users:
         is_active = False
-        if u.is_premium and u.premium_expiry and u.premium_expiry > datetime.now():
+        if u.is_premium and u.premium_expiry and u.premium_expiry > now:
             is_active = True
-            
-        row_data.append({
+        rows.append({
             "id": u.id,
             "public_id": u.public_id,
             "username": u.username,
             "subscribed": is_active,
-            "premium_expiry": u.premium_expiry.strftime("%Y-%m-%d") if u.premium_expiry else "-"
+            "premium_expiry": u.premium_expiry.strftime("%Y-%m-%d %H:%M")
+            if u.premium_expiry else "-"
         })
 
     return render_template(
         "dashboard_admin.html",
-        admin=user,
+        admin=admin,
         labels=labels,
         data=data_visits,
         total_visits=total_visits,
         input_labels=input_labels,
-        input_data=input_data,
+        input_data=input_data, # Data yang sudah diperbaiki jam-nya
         total_inputs=total_inputs,
-        rows=row_data,
+        rows=rows,
         sort=sort, dir=direction, page=page,
-        total_pages=pagination.pages,
-        total_users=pagination.total,
+        total_pages=pagination.pages, total_users=pagination.total,
         has_prev=pagination.has_prev, has_next=pagination.has_next
     )
 
@@ -311,12 +320,16 @@ def payment_success():
 
 @app.route("/generate-invoice", methods=["POST"])
 def generate_invoice():
-    # --- LOG VISIT MANUAL ---
+    # --- [FIX] LOG VISIT MANUAL UNTUK TAMU & MEMBER ---
     try:
-        if "user_id" in session:
-            v = PageVisit(path='/generate-invoice', user_id=session["user_id"])
-            db.session.add(v)
-            db.session.commit()
+        # Kita ambil user_id jika ada, jika tidak ada (Tamu) biarkan None
+        # PENTING: Jangan gunakan 'if user_id in session' agar Tamu juga terhitung
+        current_user_id = session.get("user_id") 
+        
+        # Simpan ke database
+        v = PageVisit(path='/generate-invoice', user_id=current_user_id)
+        db.session.add(v)
+        db.session.commit()
     except Exception as e:
         logger.error(f"Failed logging visit: {e}")
         db.session.rollback()
@@ -434,7 +447,6 @@ def logout():
 
 @app.route("/login/google")
 def login_google():
-    # Dengan ProxyFix, _external=True akan otomatis generate HTTPS jika di Azure
     redirect_uri = url_for("google_callback", _external=True)
     return oauth.google.authorize_redirect(redirect_uri)
 
@@ -453,14 +465,12 @@ def google_callback():
         user = User.query.filter_by(username=email).first()
         
         if not user:
-            # --- PERBAIKAN DI SINI ---
-            # Kita buat password acak agar database tidak error (NOT NULL constraint)
-            # User tidak perlu tahu password ini karena mereka login via Google
+            # --- [FIX] Password Dummy untuk DB NOT NULL ---
             dummy_password = os.urandom(16).hex()
             
             user = User(
                 username=email,
-                password=generate_password_hash(dummy_password), # Isi password dummy
+                password=generate_password_hash(dummy_password),
                 is_premium=False
             )
             db.session.add(user)
@@ -472,7 +482,6 @@ def google_callback():
         
     except Exception as e:
         logger.error(f"OAuth Error: {e}")
-        # Tampilkan error jika masih gagal
         flash(f"Gagal Login Google: {str(e)}", "error")
         return redirect(url_for('login'))
     
@@ -556,12 +565,12 @@ def track_visit():
     if request.path.startswith(("/static", "/admin")): return
     
     try:
+        # Simpan waktu UTC
         v = PageVisit(path=request.path, user_id=session.get("user_id"))
         db.session.add(v)
         db.session.commit()
     except:
         db.session.rollback()
-
 
 if __name__ == "__main__":
     init_db()
