@@ -45,7 +45,7 @@ pipeline {
         }
 
         // --- INI TAMBAHANNYA AGAR MUNCUL OUTPUT DEPLOY ---
-        stage('4. Trigger Azure Deploy') {
+        stage('4. Deploy to Azure Web App') {
             steps {
                 script {
                     echo "--------------------------------------------------"
