@@ -99,7 +99,22 @@
           </label>
         </div>
       </div>
-
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-gray-600 mb-1">Background</label>
+            <input type="color" id="bgColorPicker" value="#ffffff" class="w-full h-10 p-1 rounded cursor-pointer border">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-600 mb-1">Aksen/Garis</label>
+            <input type="color" id="lineColorPicker" value="#000000" class="w-full h-10 p-1 rounded cursor-pointer border">
+          </div>
+        </div>
+        <div class="mt-4">
+          <label class="block text-sm font-semibold text-gray-600 mb-1">Judul Invoice</label>
+          <input type="text" id="headerTitleInput" value="INVOICE" class="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none transition text-sm">
+        </div>
+      </div>  
       <div id="premiumSettings" class="bg-white p-6 rounded-2xl shadow-sm border border-indigo-200 transition-all duration-200 {% if not user.is_premium %}opacity-60 pointer-events-none grayscale{% endif %}">
         
         <div class="flex justify-between items-center mb-4">
@@ -182,23 +197,6 @@
               </button>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-semibold text-gray-600 mb-1">Background</label>
-            <input type="color" id="bgColorPicker" value="#ffffff" class="w-full h-10 p-1 rounded cursor-pointer border">
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-gray-600 mb-1">Aksen/Garis</label>
-            <input type="color" id="lineColorPicker" value="#000000" class="w-full h-10 p-1 rounded cursor-pointer border">
-          </div>
-        </div>
-        <div class="mt-4">
-          <label class="block text-sm font-semibold text-gray-600 mb-1">Judul Invoice</label>
-          <input type="text" id="headerTitleInput" value="INVOICE" class="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none transition text-sm">
         </div>
       </div>
     </div>
