@@ -26,9 +26,9 @@
     </div>
 
     {% if admin %}
-      <!-- <a href="{{ url_for('admin_page') }}" class="bg-gray-800 text-white px-5 py-2 rounded-full text-sm hover:bg-gray-700 font-bold shadow-sm transition">
+      <a href="{{ url_for('admin_page') }}" class="bg-gray-800 text-white px-5 py-2 rounded-full text-sm hover:bg-gray-700 font-bold shadow-sm transition">
         ← Admin Panel
-      </a> -->
+      </a>
     {% else %}
       <div class="flex items-center gap-4">
         <div class="text-right hidden md:block">
@@ -99,22 +99,7 @@
           </label>
         </div>
       </div>
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-semibold text-gray-600 mb-1">Background</label>
-            <input type="color" id="bgColorPicker" value="#ffffff" class="w-full h-10 p-1 rounded cursor-pointer border">
-          </div>
-          <div>
-            <label class="block text-sm font-semibold text-gray-600 mb-1">Aksen/Garis</label>
-            <input type="color" id="lineColorPicker" value="#000000" class="w-full h-10 p-1 rounded cursor-pointer border">
-          </div>
-        </div>
-        <div class="mt-4">
-          <label class="block text-sm font-semibold text-gray-600 mb-1">Judul Invoice</label>
-          <input type="text" id="headerTitleInput" value="INVOICE" class="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none transition text-sm">
-        </div>
-      </div>
+
       <div id="premiumSettings" class="bg-white p-6 rounded-2xl shadow-sm border border-indigo-200 transition-all duration-200 {% if not user.is_premium %}opacity-60 pointer-events-none grayscale{% endif %}">
         
         <div class="flex justify-between items-center mb-4">
@@ -197,6 +182,23 @@
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-gray-600 mb-1">Background</label>
+            <input type="color" id="bgColorPicker" value="#ffffff" class="w-full h-10 p-1 rounded cursor-pointer border">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-600 mb-1">Aksen/Garis</label>
+            <input type="color" id="lineColorPicker" value="#000000" class="w-full h-10 p-1 rounded cursor-pointer border">
+          </div>
+        </div>
+        <div class="mt-4">
+          <label class="block text-sm font-semibold text-gray-600 mb-1">Judul Invoice</label>
+          <input type="text" id="headerTitleInput" value="INVOICE" class="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none transition text-sm">
         </div>
       </div>
     </div>
@@ -348,14 +350,60 @@
         document.getElementById("finalTemplate").value = val;
     }
 
+    function syncHiddenFields() {
+      document.getElementById("finalBgColor").value = (document.getElementById("bgColorPicker").value || "#ffffff").replace("#", "");
+      document.getElementById("finalLineColor").value = (document.getElementById("lineColorPicker").value || "#000000").replace("#", "");
+      document.getElementById("finalHeaderTitle").value = document.getElementById("headerTitleInput").value || "INVOICE";
+    }
+
+    // --- [BARU] VALIDASI & SUBMIT INVOICE ---
     function submitInvoice() {
-        // Sync nilai warna dan judul ke hidden input
-        document.getElementById("finalBgColor").value = document.getElementById("bgColorPicker").value.replace("#", "");
-        document.getElementById("finalLineColor").value = document.getElementById("lineColorPicker").value.replace("#", "");
-        document.getElementById("finalHeaderTitle").value = document.getElementById("headerTitleInput").value;
+        const form = document.getElementById("invoiceForm");
+
+        // 1. Cek Validasi Standar HTML (Required fields seperti Customer Name)
+        if (!form.checkValidity()) {
+            form.reportValidity(); // Memunculkan pesan error bawaan browser
+            return; // Stop proses
+        }
+
+        // 2. Cek apakah ada item di dalam tabel
+        const itemRows = document.querySelectorAll("#items tr");
+        if (itemRows.length === 0) {
+            alert("⚠️ Invoice kosong! Mohon tambahkan minimal 1 item barang/jasa.");
+            return; // Stop proses
+        }
+
+        // 3. Cek validasi mendalam per baris (Nama Item & Harga)
+        let isItemsValid = true;
         
-        // Submit form
-        document.getElementById("invoiceForm").submit();
+        itemRows.forEach((row) => {
+            const nameInput = row.querySelector("input[name='itemname']");
+            const priceInput = row.querySelector("input[name='itemprice']");
+            const qtyInput = row.querySelector("input[name='itemqty']");
+
+            // Pastikan input ada nilainya dan harga tidak 0
+            if (!nameInput.value.trim() || priceInput.value <= 0 || qtyInput.value <= 0) {
+                isItemsValid = false;
+                // Beri highlight merah sebentar
+                nameInput.classList.add("border-red-500");
+                priceInput.classList.add("border-red-500");
+                setTimeout(() => {
+                    nameInput.classList.remove("border-red-500");
+                    priceInput.classList.remove("border-red-500");
+                }, 2000);
+            }
+        });
+
+        if (!isItemsValid) {
+            alert("⚠️ Data Item tidak lengkap! Pastikan Nama Item terisi dan Harga/Qty lebih dari 0.");
+            return; // Stop proses
+        }
+
+        // 4. Jika semua aman, Sync data warna & Submit
+        syncHiddenFields();
+        
+        // Submit form ke tab baru
+        form.submit();
     }
 
     // --- UPLOAD AJAX ---
