@@ -14,7 +14,7 @@ load_dotenv()
 
 from flask import (
     Flask, render_template, request, redirect,
-    url_for, session, jsonify, flash
+    url_for, session, jsonify, flash, make_response
 )
 
 from flask_sqlalchemy import SQLAlchemy
@@ -35,17 +35,21 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# [FIX] Middleware ProxyFix untuk Azure
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+# [PERBAIKAN 1] Middleware ProxyFix yang lebih ketat untuk Azure HTTPS
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
 
-app.secret_key = "rahasia_lokal_123"
+# [PERBAIKAN 2] Secret Key yang lebih kuat dengan environment variable
+app.secret_key = os.environ.get('SECRET_KEY', 'rahasia_produksi_yang_kuat_999')
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-# --- KONFIGURASI DATABASE ---
+# --- KONFIGURASI DATABASE DENGAN SSL ---
 AZURE_DB_HOST = "praktikum-crudtaufiq2311.mysql.database.azure.com"
 AZURE_DB_USER = "adminlogintest"
 AZURE_DB_PASS = "mpVYe8mXt8h2wdi"
 AZURE_DB_NAME = "invoiceinaja"
+
+# Path ke CA Certificate di Azure Linux App Service
+ca_cert_path = "/var/ssl/certs/a8985d3a65e5e5c4b2d7d66d40c6dd2fb19c5436.der"
 
 database_uri = (
     f"mysql+pymysql://{AZURE_DB_USER}:{AZURE_DB_PASS}"
@@ -54,10 +58,31 @@ database_uri = (
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_uri
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+# [PERBAIKAN 3] Memaksa Enkripsi SSL pada koneksi Database
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "connect_args": {
+        "ssl": {
+            "ca": ca_cert_path
+        }
+    }
+}
+
 app.config["UPLOAD_FOLDER"] = os.path.join(basedir, "static", "uploads")
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 db = SQLAlchemy(app)
+
+# [PERBAIKAN 4] Menambahkan Security Headers untuk kepuasan Google Safe Browsing
+@app.after_request
+def add_security_headers(response):
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    # Mencegah eksekusi script asing yang membuat situs dicap "Deceptive"
+    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' https://app.sandbox.midtrans.com https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:;"
+    return response
 
 # --- KONFIGURASI MIDTRANS ---
 MIDTRANS_SERVER_KEY = "Mid-server-JEHBUtBFFwcJ8Sw8GypuXrQZ"
@@ -90,7 +115,6 @@ class User(db.Model):
     company_logo = db.Column(db.String(200), nullable=True)
     company_address = db.Column(db.String(500), nullable=True)
     signature_file = db.Column(db.String(200), nullable=True)
-    
     # Field Tambahan untuk Profil Invoice
     company_name = db.Column(db.String(120), nullable=True)
     signature_name = db.Column(db.String(120), nullable=True)
@@ -145,7 +169,8 @@ def require_admin_user():
 
 @app.route("/")
 def index():
-    return redirect(url_for("dashboard"))
+    # [PERBAIKAN 5] Redirect permanen (301) lebih disukai Google daripada 302
+    return redirect(url_for("dashboard"), code=301)
 
 @app.route("/admin")
 def admin_page():
@@ -169,14 +194,13 @@ def admin_page():
     total_visits = sum(data_visits)
 
     # --- BAGIAN 3 [PERBAIKAN TOTAL]: GRAFIK INPUT INVOICE (WIB / REALTIME) ---
-    
     # Ambil waktu sekarang (UTC) dan ubah ke WIB (+7 Jam)
     now_utc = datetime.utcnow()
     now_wib = now_utc + timedelta(hours=7)
-    
+
     # Tentukan awal hari ini dalam WIB (Jam 00:00:00 WIB)
     today_start_wib = now_wib.replace(hour=0, minute=0, second=0, microsecond=0)
-    
+
     # Konversi balik ke UTC untuk filter database (karena DB simpan UTC)
     # Ini memastikan input jam 01:00 WIB (yang di DB tercatat jam 18:00 kemarin UTC) tetap terambil
     filter_start_utc = today_start_wib - timedelta(hours=7)
@@ -216,7 +240,6 @@ def admin_page():
 
     pagination = q.paginate(page=page, per_page=per_page, error_out=False)
     users = pagination.items
-    
     now = datetime.now()
     rows = []
     for u in users:
@@ -283,7 +306,6 @@ def get_payment_token():
     )
 
     order_id = f"PREM-{user.id}-{int(time.time())}"
-
     param = {
         "transaction_details": {
             "order_id": order_id,
@@ -308,14 +330,12 @@ def get_payment_token():
 @app.route("/payment-success", methods=["POST"])
 def payment_success():
     if "user_id" not in session: return jsonify({"error": "Unauthorized"}), 401
-
     user = User.query.get(session["user_id"])
     if user:
         user.is_premium = True
         user.premium_expiry = datetime.now() + timedelta(days=30)
         db.session.commit()
         return jsonify({"status": "success"})
-    
     return jsonify({"error": "User not found"}), 404
 
 @app.route("/generate-invoice", methods=["POST"])
@@ -324,8 +344,7 @@ def generate_invoice():
     try:
         # Kita ambil user_id jika ada, jika tidak ada (Tamu) biarkan None
         # PENTING: Jangan gunakan 'if user_id in session' agar Tamu juga terhitung
-        current_user_id = session.get("user_id") 
-        
+        current_user_id = session.get("user_id")
         # Simpan ke database
         v = PageVisit(path='/generate-invoice', user_id=current_user_id)
         db.session.add(v)
@@ -338,23 +357,21 @@ def generate_invoice():
     try:
         user_id = session.get("user_id")
         user = User.query.get(user_id) if user_id else Guest()
-        
+
         f = request.form
         template = f.get("template", "basic")
-        
         bg_color = "#" + f.get("bgcolor", "ffffff").replace("#", "")
         line_color = "#" + f.get("linecolor", "000000").replace("#", "")
-        
         customer = f.get("customername", "").strip() or "Pelanggan"
         header_title = f.get("headertitle", "INVOICE")
-        
+
         names = f.getlist("itemname")
         qtys = f.getlist("itemqty")
         prices = f.getlist("itemprice")
-        
+
         items = []
         grand_total = 0
-        
+
         for i in range(len(names)):
             n = names[i].strip()
             if not n: continue
@@ -384,7 +401,7 @@ def generate_invoice():
             header_title=header_title,
             date=datetime.now().strftime("%d %B %Y")
         )
-        
+
     except Exception as e:
         logger.error(f"Generate Invoice Error: {e}")
         return f"Terjadi kesalahan sistem: {str(e)}", 500
@@ -396,7 +413,6 @@ def login():
     if request.method == "POST":
         u = request.form.get("username", "").strip()
         p = request.form.get("password", "")
-
         user = User.query.filter_by(username=u).first()
 
         if not user:
@@ -410,7 +426,7 @@ def login():
             if user.is_admin:
                 return redirect(url_for("admin_page"))
             return redirect(url_for("dashboard"))
-            
+
     return render_template("login.html")
 
 @app.route("/register", methods=["POST"])
@@ -455,19 +471,16 @@ def google_callback():
     try:
         token = oauth.google.authorize_access_token()
         info = token.get('userinfo')
-        
         if not info:
             flash("Gagal mengambil data dari Google.", "error")
             return redirect(url_for('login'))
-        
+
         email = info.get('email')
-        
         user = User.query.filter_by(username=email).first()
-        
+
         if not user:
             # --- [FIX] Password Dummy untuk DB NOT NULL ---
             dummy_password = os.urandom(16).hex()
-            
             user = User(
                 username=email,
                 password=generate_password_hash(dummy_password),
@@ -476,22 +489,22 @@ def google_callback():
             db.session.add(user)
             db.session.commit()
             flash("Akun baru berhasil dibuat!", "success")
-        
+
         session['user_id'] = user.id
         return redirect(url_for('dashboard'))
-        
+
     except Exception as e:
         logger.error(f"OAuth Error: {e}")
         flash(f"Gagal Login Google: {str(e)}", "error")
         return redirect(url_for('login'))
-    
+
 @app.route("/dashboard")
 def dashboard():
     user_id = session.get("user_id")
     if user_id:
         user = User.query.get(user_id)
         if user and user.is_admin:
-            user.is_premium = True 
+            user.is_premium = True
     else:
         user = Guest()
 
@@ -505,12 +518,10 @@ def dashboard():
 @app.route("/upload-logo", methods=["POST"])
 def upload_logo():
     if "user_id" not in session: return jsonify(error="Login required"), 401
-    
     f = request.files.get("logo")
     if f:
         fn = secure_filename(f"logo_{session['user_id']}_{f.filename}")
         f.save(os.path.join(app.config['UPLOAD_FOLDER'], fn))
-        
         u = User.query.get(session['user_id'])
         u.company_logo = fn
         db.session.commit()
@@ -520,12 +531,10 @@ def upload_logo():
 @app.route("/upload-signature", methods=["POST"])
 def upload_signature():
     if "user_id" not in session: return jsonify(error="Login required"), 401
-    
     f = request.files.get("signature")
     if f:
         fn = secure_filename(f"sig_{session['user_id']}_{f.filename}")
         f.save(os.path.join(app.config['UPLOAD_FOLDER'], fn))
-        
         u = User.query.get(session['user_id'])
         u.signature_file = fn
         db.session.commit()
@@ -535,16 +544,13 @@ def upload_signature():
 @app.route("/premium/profile", methods=["POST"])
 def update_profile():
     if "user_id" not in session: return jsonify(error="Login required"), 401
-    
     user = User.query.get(session["user_id"])
     if not user.is_premium: return jsonify(error="Premium only"), 403
-    
+
     data = request.get_json(silent=True) or {}
-    
     user.company_name = data.get("company_name", "").strip()[:150] or None
     user.signature_name = data.get("signature_name", "").strip()[:100] or None
     user.signature_title = data.get("signature_title", "").strip()[:100] or None
-    
     db.session.commit()
     return jsonify(success=True)
 
@@ -553,7 +559,7 @@ def update_address():
     if "user_id" not in session: return jsonify(error="Login required"), 401
     user = User.query.get(session["user_id"])
     if not user.is_premium: return jsonify(error="Premium only"), 403
-    
+
     data = request.get_json() or {}
     user.company_address = data.get("address", "").strip()
     db.session.commit()
@@ -563,7 +569,6 @@ def update_address():
 def track_visit():
     if request.method != "GET": return
     if request.path.startswith(("/static", "/admin")): return
-    
     try:
         # Simpan waktu UTC
         v = PageVisit(path=request.path, user_id=session.get("user_id"))
