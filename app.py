@@ -287,7 +287,7 @@ def get_payment_token():
     param = {
         "transaction_details": {
             "order_id": order_id,
-            "gross_amount": 50000
+            "gross_amount": 15000
         },
         "customer_details": {
             "first_name": customer_name,
