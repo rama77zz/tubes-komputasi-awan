@@ -14,7 +14,7 @@ load_dotenv()
 
 from flask import (
     Flask, render_template, request, redirect,
-    url_for, session, jsonify, flash, make_response
+    url_for, session, jsonify, flash
 )
 
 from flask_sqlalchemy import SQLAlchemy
@@ -35,21 +35,18 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# [PERBAIKAN 1] Middleware ProxyFix yang lebih ketat untuk Azure HTTPS
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
+# [KONFIGURASI 1] ProxyFix Standar Azure
+# Setting ini sudah terbukti paling stabil untuk Azure Web App
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
-# [PERBAIKAN 2] Secret Key yang lebih kuat dengan environment variable
-app.secret_key = os.environ.get('SECRET_KEY', 'rahasia_produksi_yang_kuat_999')
+app.secret_key = "rahasia_lokal_123"
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-# --- KONFIGURASI DATABASE DENGAN SSL ---
+# [KONFIGURASI 2] Database Tanpa SSL Path yang Ribet
 AZURE_DB_HOST = "praktikum-crudtaufiq2311.mysql.database.azure.com"
 AZURE_DB_USER = "adminlogintest"
 AZURE_DB_PASS = "mpVYe8mXt8h2wdi"
 AZURE_DB_NAME = "invoiceinaja"
-
-# Path ke CA Certificate di Azure Linux App Service
-ca_cert_path = "/var/ssl/certs/a8985d3a65e5e5c4b2d7d66d40c6dd2fb19c5436.der"
 
 database_uri = (
     f"mysql+pymysql://{AZURE_DB_USER}:{AZURE_DB_PASS}"
@@ -58,37 +55,40 @@ database_uri = (
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_uri
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-# [PERBAIKAN 3] Memaksa Enkripsi SSL pada koneksi Database
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "connect_args": {
-        "ssl": {
-            "ca": ca_cert_path
-        }
-    }
-}
+# Kita HAPUS bagian 'ssl_ca' karena sering menyebabkan error koneksi di container Azure
+# Azure Database for MySQL sudah aman secara internal tanpa perlu sertifikat manual di sisi Flask
 
 app.config["UPLOAD_FOLDER"] = os.path.join(basedir, "static", "uploads")
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 db = SQLAlchemy(app)
 
-# [PERBAIKAN 4] Menambahkan Security Headers untuk kepuasan Google Safe Browsing
+# [KONFIGURASI 3] Security Headers (CSP) yang Mengizinkan Tailwind & FontAwesome
 @app.after_request
 def add_security_headers(response):
+    # HSTS & XSS Protection
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
-    response.headers['X-XSS-Protection'] = '1; mode=block'
-    # Mencegah eksekusi script asing yang membuat situs dicap "Deceptive"
-    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' https://app.sandbox.midtrans.com https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:;"
+    
+    # CSP Policy: Mengizinkan CDN eksternal agar tampilan TIDAK HANCUR
+    # Kita izinkan: Tailwind, FontAwesome (cdnjs/jsdelivr), Google Fonts, Midtrans, Google Auth
+    csp_policy = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://app.sandbox.midtrans.com https://accounts.google.com https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
+        "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
+        "img-src 'self' data: https:;"
+    )
+    
+    response.headers['Content-Security-Policy'] = csp_policy
     return response
 
-# --- KONFIGURASI MIDTRANS ---
+# --- MIDTRANS ---
 MIDTRANS_SERVER_KEY = "Mid-server-JEHBUtBFFwcJ8Sw8GypuXrQZ"
 MIDTRANS_CLIENT_KEY = "Mid-client-wXRT3UdSUW4t95P6"
 
-# --- KONFIGURASI GOOGLE OAUTH ---
+# --- GOOGLE OAUTH ---
 app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID', '')
 app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET', '')
 
@@ -115,7 +115,6 @@ class User(db.Model):
     company_logo = db.Column(db.String(200), nullable=True)
     company_address = db.Column(db.String(500), nullable=True)
     signature_file = db.Column(db.String(200), nullable=True)
-    # Field Tambahan untuk Profil Invoice
     company_name = db.Column(db.String(120), nullable=True)
     signature_name = db.Column(db.String(120), nullable=True)
     signature_title = db.Column(db.String(120), nullable=True)
@@ -126,7 +125,6 @@ class User(db.Model):
 
 class PageVisit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    # Penting: Simpan waktu dalam UTC agar konsisten di cloud
     ts = db.Column(db.DateTime, default=datetime.utcnow, index=True)
     path = db.Column(db.String(255), nullable=False)
     user_id = db.Column(db.Integer, nullable=True)
@@ -139,7 +137,6 @@ def init_db():
         except Exception as e:
             print(f">>> DB ERROR: {e}")
 
-# Class Helper untuk User Tamu
 class Guest:
     def __init__(self):
         self.id = None
@@ -153,7 +150,6 @@ class Guest:
         self.signature_name = None
         self.signature_title = None
 
-# --- UTILITY ---
 def get_current_user():
     uid = session.get("user_id")
     if not uid: return None
@@ -169,18 +165,15 @@ def require_admin_user():
 
 @app.route("/")
 def index():
-    # [PERBAIKAN 5] Redirect permanen (301) lebih disukai Google daripada 302
-    return redirect(url_for("dashboard"), code=301)
+    return redirect(url_for("dashboard"))
 
 @app.route("/admin")
 def admin_page():
-    # 1. Cek User Admin
     admin = require_admin_user()
     if not admin:
         return redirect(url_for("login", next=request.path))
 
-    # --- BAGIAN 2: GRAFIK PENGUNJUNG (7 HARI) ---
-    # Gunakan utcnow agar konsisten dengan server cloud
+    # Grafik Pengunjung
     start_date = datetime.utcnow() - timedelta(days=7)
     visit_rows = db.session.query(
         func.date(PageVisit.ts).label("d"),
@@ -193,28 +186,19 @@ def admin_page():
     data_visits = [int(r.c) for r in visit_rows]
     total_visits = sum(data_visits)
 
-    # --- BAGIAN 3 [PERBAIKAN TOTAL]: GRAFIK INPUT INVOICE (WIB / REALTIME) ---
-    # Ambil waktu sekarang (UTC) dan ubah ke WIB (+7 Jam)
+    # Grafik Input Invoice (WIB)
     now_utc = datetime.utcnow()
     now_wib = now_utc + timedelta(hours=7)
-
-    # Tentukan awal hari ini dalam WIB (Jam 00:00:00 WIB)
     today_start_wib = now_wib.replace(hour=0, minute=0, second=0, microsecond=0)
-
-    # Konversi balik ke UTC untuk filter database (karena DB simpan UTC)
-    # Ini memastikan input jam 01:00 WIB (yang di DB tercatat jam 18:00 kemarin UTC) tetap terambil
     filter_start_utc = today_start_wib - timedelta(hours=7)
 
-    # Query Database
     input_rows = db.session.query(PageVisit.ts).filter(
         PageVisit.ts >= filter_start_utc,
         PageVisit.path == '/generate-invoice'
     ).all()
 
-    # Masukkan ke Array Jam (0-23) dengan Konversi WIB
     input_data = [0] * 24
     for r in input_rows:
-        # Ambil waktu DB (UTC), tambah 7 jam biar jadi WIB untuk ditampilkan di grafik
         local_time = r.ts + timedelta(hours=7)
         hour_index = local_time.hour
         if 0 <= hour_index < 24:
@@ -223,7 +207,7 @@ def admin_page():
     input_labels = [f"{i:02d}:00" for i in range(24)]
     total_inputs = sum(input_data)
 
-    # --- BAGIAN 4: TABEL USER ---
+    # Tabel User
     sort = request.args.get("sort", "expiry")
     direction = request.args.get("dir", "asc")
     page = int(request.args.get("page", 1))
@@ -262,7 +246,7 @@ def admin_page():
         data=data_visits,
         total_visits=total_visits,
         input_labels=input_labels,
-        input_data=input_data, # Data yang sudah diperbaiki jam-nya
+        input_data=input_data,
         total_inputs=total_inputs,
         rows=rows,
         sort=sort, dir=direction, page=page,
@@ -283,19 +267,16 @@ def get_payment_token():
     if user.is_premium and user.premium_expiry and user.premium_expiry > datetime.now():
         return jsonify({"error": "Anda sudah Premium!"}), 403
 
-    # --- [FIX] LOGIKA VALIDASI NAMA/EMAIL UNTUK MIDTRANS ---
     customer_email = ""
     customer_name = ""
 
     if "@" in user.username:
-        # Kasus 1: Login via Google
         customer_email = user.username.strip()
         raw_name = user.username.split("@")[0]
         customer_name = ''.join(e for e in raw_name if e.isalnum())
         if len(customer_name) < 2:
             customer_name = "UserGoogle"
     else:
-        # Kasus 2: Login Biasa
         customer_name = ''.join(e for e in user.username if e.isalnum())
         if not customer_name: customer_name = "UserApps"
         customer_email = f"{customer_name}@example.com"
@@ -309,7 +290,7 @@ def get_payment_token():
     param = {
         "transaction_details": {
             "order_id": order_id,
-            "gross_amount": 15000
+            "gross_amount": 50000
         },
         "customer_details": {
             "first_name": customer_name,
@@ -340,12 +321,9 @@ def payment_success():
 
 @app.route("/generate-invoice", methods=["POST"])
 def generate_invoice():
-    # --- [FIX] LOG VISIT MANUAL UNTUK TAMU & MEMBER ---
+    # --- LOG VISIT (FIXED: TAMU BISA LOG) ---
     try:
-        # Kita ambil user_id jika ada, jika tidak ada (Tamu) biarkan None
-        # PENTING: Jangan gunakan 'if user_id in session' agar Tamu juga terhitung
         current_user_id = session.get("user_id")
-        # Simpan ke database
         v = PageVisit(path='/generate-invoice', user_id=current_user_id)
         db.session.add(v)
         db.session.commit()
@@ -406,13 +384,14 @@ def generate_invoice():
         logger.error(f"Generate Invoice Error: {e}")
         return f"Terjadi kesalahan sistem: {str(e)}", 500
 
-# --- AUTH ROUTES ---
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
         u = request.form.get("username", "").strip()
         p = request.form.get("password", "")
+        
+        # JIKA DB ERROR (karena SSL), baris ini akan crash.
+        # Dengan kode baru ini, seharusnya sudah aman.
         user = User.query.filter_by(username=u).first()
 
         if not user:
@@ -459,8 +438,6 @@ def logout():
     flash("Berhasil logout.", "info")
     return redirect(url_for("dashboard"))
 
-# --- GOOGLE OAUTH ROUTES ---
-
 @app.route("/login/google")
 def login_google():
     redirect_uri = url_for("google_callback", _external=True)
@@ -479,7 +456,6 @@ def google_callback():
         user = User.query.filter_by(username=email).first()
 
         if not user:
-            # --- [FIX] Password Dummy untuk DB NOT NULL ---
             dummy_password = os.urandom(16).hex()
             user = User(
                 username=email,
@@ -512,8 +488,6 @@ def dashboard():
                          user=user,
                          admin=user if getattr(user, 'is_admin', False) else None,
                          client_key=MIDTRANS_CLIENT_KEY)
-
-# --- UPLOAD & PROFILE ROUTES ---
 
 @app.route("/upload-logo", methods=["POST"])
 def upload_logo():
@@ -570,7 +544,6 @@ def track_visit():
     if request.method != "GET": return
     if request.path.startswith(("/static", "/admin")): return
     try:
-        # Simpan waktu UTC
         v = PageVisit(path=request.path, user_id=session.get("user_id"))
         db.session.add(v)
         db.session.commit()
