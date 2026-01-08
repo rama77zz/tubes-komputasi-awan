@@ -36,13 +36,12 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 
 # [KONFIGURASI 1] ProxyFix Standar Azure
-# Setting ini sudah terbukti paling stabil untuk Azure Web App
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 app.secret_key = "rahasia_lokal_123"
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-# [KONFIGURASI 2] Database Tanpa SSL Path yang Ribet
+# [KONFIGURASI 2] Database
 AZURE_DB_HOST = "praktikum-crudtaufiq2311.mysql.database.azure.com"
 AZURE_DB_USER = "adminlogintest"
 AZURE_DB_PASS = "mpVYe8mXt8h2wdi"
@@ -55,30 +54,33 @@ database_uri = (
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_uri
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-# Kita HAPUS bagian 'ssl_ca' karena sering menyebabkan error koneksi di container Azure
-# Azure Database for MySQL sudah aman secara internal tanpa perlu sertifikat manual di sisi Flask
-
 app.config["UPLOAD_FOLDER"] = os.path.join(basedir, "static", "uploads")
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 db = SQLAlchemy(app)
 
-# [KONFIGURASI 3] Security Headers (CSP) yang Mengizinkan Tailwind & FontAwesome
+# [KONFIGURASI 3 - PERBAIKAN TOTAL] Security Headers (CSP)
 @app.after_request
 def add_security_headers(response):
-    # HSTS & XSS Protection
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
     
-    # CSP Policy: Mengizinkan CDN eksternal agar tampilan TIDAK HANCUR
-    # Kita izinkan: Tailwind, FontAwesome (cdnjs/jsdelivr), Google Fonts, Midtrans, Google Auth
+    # PERBAIKAN DISINI: Menambahkan frame-src dan connect-src untuk Midtrans
     csp_policy = (
         "default-src 'self'; "
+        # Script: Izinkan Midtrans, Google, Tailwind, CDN
         "script-src 'self' 'unsafe-inline' https://app.sandbox.midtrans.com https://accounts.google.com https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+        # Style: Izinkan Google Fonts
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
+        # Font: Izinkan Google Fonts
         "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
-        "img-src 'self' data: https:;"
+        # Image: Izinkan gambar data (base64) dan https
+        "img-src 'self' data: https:; "
+        # Connect: Izinkan koneksi API ke Midtrans
+        "connect-src 'self' https://app.sandbox.midtrans.com https://api.sandbox.midtrans.com; "
+        # Frame: PENTING! Izinkan Iframe Midtrans dan Google muncul
+        "frame-src 'self' https://app.sandbox.midtrans.com https://accounts.google.com;"
     )
     
     response.headers['Content-Security-Policy'] = csp_policy
@@ -290,7 +292,7 @@ def get_payment_token():
     param = {
         "transaction_details": {
             "order_id": order_id,
-            "gross_amount": 50000
+            "gross_amount": 15000
         },
         "customer_details": {
             "first_name": customer_name,
@@ -321,7 +323,7 @@ def payment_success():
 
 @app.route("/generate-invoice", methods=["POST"])
 def generate_invoice():
-    # --- LOG VISIT (FIXED: TAMU BISA LOG) ---
+    # --- LOG VISIT ---
     try:
         current_user_id = session.get("user_id")
         v = PageVisit(path='/generate-invoice', user_id=current_user_id)
@@ -390,8 +392,6 @@ def login():
         u = request.form.get("username", "").strip()
         p = request.form.get("password", "")
         
-        # JIKA DB ERROR (karena SSL), baris ini akan crash.
-        # Dengan kode baru ini, seharusnya sudah aman.
         user = User.query.filter_by(username=u).first()
 
         if not user:
